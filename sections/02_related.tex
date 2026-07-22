@@ -1,0 +1,42 @@
+\section{Related Work}
+\label{sec:related}
+
+\noindent\textbf{Human pose estimation and body reconstruction.}
+Recovering the configuration of a human body from a single image is a mature problem.
+Two-dimensional pose estimators localize keypoints with high accuracy.
+Early architectures fuse multi-scale features~\cite{newell2016stacked,xiao2018simple} and associate keypoints across people~\cite{cao2019openpose}.
+Later designs preserve high-resolution features~\cite{sun2019deep} or adopt transformer backbones~\cite{xu2022vitpose}.
+Parametric models extend recovery from 2D joints to 3D pose and shape.
+SMPL defines the standard representation~\cite{loper2015smpl}.
+Regressors estimate its parameters from one image with increasing robustness~\cite{kanazawa2018end,kolotouros2019spin,li2022cliff,goel2023humans}.
+SAM 3D Body extends this line to full-body recovery under the MHR representation~\cite{yang2026sam3dbody}.
+These methods output geometry as the final product.
+We use reconstruction as an annotation mechanism instead.
+Dense outputs are converted into interpretable measurements that ground language supervision.
+
+\noindent\textbf{Action quality and pose correction.}
+Action quality assessment scores how well an action is performed~\cite{lei2019survey}.
+Methods exist for cross-action quality scoring~\cite{parmar2019action} and for assessment of rehabilitation exercises~\cite{liao2020deep}.
+Pose Tutor identifies the joint angles that drive a pose prediction in yoga and related exercise domains~\cite{dittakavi2022posetutor}.
+These approaches return scores, error indicators, or localized corrections.
+They do not verbalize the measured configuration of the body.
+Our focus is complementary.
+We construct language supervision whose numeric statements remain traceable to explicit, image-specific measurements.
+
+\noindent\textbf{Vision--language learning and visual QA.}
+Vision--language models connect images with text at scale.
+CLIP learns transferable image--text representations through contrastive pretraining~\cite{radford2021clip}.
+Flamingo and BLIP-2 couple frozen image encoders with language models~\cite{alayrac2022flamingo,li2023blip2}.
+Visual instruction tuning then teaches these models to follow instructions~\cite{liu2023visual,dai2023instructblip}, with Qwen2-VL adding dynamic-resolution processing~\cite{wang2024qwen2vl}.
+Standard VQA benchmarks ask about objects, attributes, and relations~\cite{goyal2017vqav2,hudson2019gqa}.
+They do not ask a model to select a continuous body measurement and verbalize it.
+YogaAlign supplies this missing supervision.
+
+\noindent\textbf{Human pose datasets.}
+Existing pose datasets do not close this gap.
+COCO and MPII annotate 2D keypoints~\cite{lin2014coco,andriluka2014mpii}.
+Human3.6M captures 3D pose under controlled conditions~\cite{ionescu2014human36m}.
+3DPW extends 3D annotation to in-the-wild video~\cite{vonMarcard2018}.
+Yoga-82 targets fine-grained classification of 82 asanas but provides only category labels~\cite{verma2020yoga82}.
+No dataset pairs an image with measured body geometry and language grounded in that geometry.
+YogaAlign builds on the image diversity of Yoga-82 and adds reconstruction-derived measurements with language-grounded supervision.
