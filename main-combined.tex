@@ -683,8 +683,9 @@ with $\lambda_{\mathrm{ang}}=0.75$ and $\beta=0.05$, corresponding to a $9^\circ
 The language term is causal cross-entropy with label smoothing.
 Domain-knowledge records contain no \texttt{<ANGLE>} positions and therefore contribute only $\mathcal{L}_{\mathrm{LM}}$.
 
-To reduce complete dependence on structured measurements, we apply full geometry dropout to 15\% of geometry-grounded training records.
+As a regularizer, we apply full geometry dropout to 15\% of geometry-grounded training records.
 For a selected record, every measurement is marked unavailable and represented by the learned missing-value embedding.
+We do not evaluate behavior under missing measurements at test time.
 
 The CLIP vision encoder and multimodal projector remain frozen.
 We adapt the Vicuna language decoder using LoRA with rank 32, scaling parameter 64, and dropout 0.10.
@@ -831,6 +832,8 @@ Table~\ref{tab:path_results} reports performance across the five geometry-QA fam
 Misconception questions achieve the lowest MAE ($11.28^\circ$) and highest within-$10^\circ$ accuracy (68.75\%), although this subset contains only 32 slots.
 Regional-summary and comparison questions also perform favorably despite requiring multiple values or cross-body-part relations.
 Instructor-observation questions are the most challenging, with an MAE of $21.08^\circ$ and within-$10^\circ$ accuracy of 25.81\%.
+Their $R^2$ of 0.054 over 31 slots is the weakest result in the table and indicates that predictions in this family barely track their targets.
+The error metrics alone understate this failure.
 Their less explicit teacher-style formulations may make descriptor selection more ambiguous, although the present experiment does not isolate this factor.
 
 \begin{table}[t]
@@ -901,6 +904,7 @@ Under a retrieval-based reading of the regression, this direction is counterintu
 
 Table~\ref{tab:generation_results} evaluates complete free-running generation.
 YogaLLaVA V3 emits the correct number of numeric values for 267 of 310 records (86.1\%), compared with 66.1\% for LLaVA-1.5-7B and 68.1\% for Qwen2.5-VL-7B.
+The Wilson 95\% confidence interval for YogaLLaVA V3 is $[81.8,89.5]\%$ and overlaps neither baseline interval ($[60.7,71.2]\%$ for LLaVA-1.5-7B and $[62.7,73.0]\%$ for Qwen2.5-VL-7B).
 The proposed model is therefore more reliable at determining when and how many continuous outputs are required.
 
 This comparison evaluates complete models.
@@ -910,6 +914,8 @@ The observed advantage therefore reflects the combined effect of geometry condit
 It should not be read as a modality-matched ablation.
 
 For numeric comparison, we use the 160-record common-success subset on which all three models produce the correct slot count.
+Conditioning on joint success removes every record where a baseline failed to emit a valid slot count.
+Because such records are plausibly the harder ones, the numeric gaps below hold conditional on this selection.
 YogaLLaVA V3 achieves a slot-level MAE of $17.65^\circ$, compared with $42.80^\circ$ for LLaVA and $46.91^\circ$ for Qwen.
 Its record-level macro MAE is $16.98^\circ$ with a 95\% bootstrap confidence interval of $[14.15,20.17]^\circ$.
 The corresponding intervals are $[37.33,46.41]^\circ$ for LLaVA and $[41.59,53.87]^\circ$ for Qwen.
@@ -918,18 +924,19 @@ Paired bootstrap differences relative to YogaLLaVA are $24.85^\circ$ ($[19.45,30
 \begin{table}[t]
     \centering
     \caption{Autoregressive generation on 310 test records. Slot accuracy is
-    measured on the full test set. Numeric errors use the 160-record
-    common-success subset.}
+    measured on the full test set and reported with Wilson 95\% confidence
+    intervals. Numeric errors use the 160-record common-success subset.}
     \label{tab:generation_results}
     \resizebox{\columnwidth}{!}{
-    \begin{tabular}{lrrr}
+    \begin{tabular}{lrrrr}
         \toprule
         \textbf{Model} & \textbf{Slot Match $\uparrow$} &
+        \textbf{95\% CI} &
         \textbf{MAE $\downarrow$} & \textbf{RMSE $\downarrow$} \\
         \midrule
-        YogaLLaVA V3 & 267/310 (86.1\%) & $17.65^\circ$ & $27.23^\circ$ \\
-        LLaVA-1.5-7B & 205/310 (66.1\%) & $42.80^\circ$ & $52.59^\circ$ \\
-        Qwen2.5-VL-7B & 211/310 (68.1\%) & $46.91^\circ$ & $61.12^\circ$ \\
+        YogaLLaVA V3 & 267/310 (86.1\%) & $[81.8,89.5]\%$ & $17.65^\circ$ & $27.23^\circ$ \\
+        LLaVA-1.5-7B & 205/310 (66.1\%) & $[60.7,71.2]\%$ & $42.80^\circ$ & $52.59^\circ$ \\
+        Qwen2.5-VL-7B & 211/310 (68.1\%) & $[62.7,73.0]\%$ & $46.91^\circ$ & $61.12^\circ$ \\
         \bottomrule
     \end{tabular}}
 \end{table}

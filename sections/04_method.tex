@@ -208,8 +208,9 @@ with $\lambda_{\mathrm{ang}}=0.75$ and $\beta=0.05$, corresponding to a $9^\circ
 The language term is causal cross-entropy with label smoothing.
 Domain-knowledge records contain no \texttt{<ANGLE>} positions and therefore contribute only $\mathcal{L}_{\mathrm{LM}}$.
 
-To reduce complete dependence on structured measurements, we apply full geometry dropout to 15\% of geometry-grounded training records.
+As a regularizer, we apply full geometry dropout to 15\% of geometry-grounded training records.
 For a selected record, every measurement is marked unavailable and represented by the learned missing-value embedding.
+We do not evaluate behavior under missing measurements at test time.
 
 The CLIP vision encoder and multimodal projector remain frozen.
 We adapt the Vicuna language decoder using LoRA with rank 32, scaling parameter 64, and dropout 0.10.
