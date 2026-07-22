@@ -205,29 +205,8 @@ Compact signatures of previously extracted facts, knowledge units, and questions
 Question families are varied across factual, procedural, scenario-based, safety, reverse-lookup, correction, and teacher-cue formulations.
 Each accepted item stores the pose, source-chunk identifier, question, answer, QA type, supporting facts, supporting knowledge units, and an evidence phrase.
 Every answer remains traceable to its source evidence.
-
-\begin{table}[t]
-\centering
-\caption{Domain-knowledge QA generation settings.}
-\label{tab:domain_qa_config}
-\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabular}{ll}
-\toprule
-\textbf{Item} & \textbf{Setting} \\
-\midrule
-Knowledge organization & One document per pose \\
-Chunk size / overlap & 5,000 / 500 characters \\
-Maximum relational facts per chunk & 8 \\
-Maximum knowledge units per chunk & 3 \\
-Maximum QA pairs per chunk & 10 \\
-Maximum QA pairs per knowledge unit & 3 \\
-Generation temperature & 0 \\
-Context length & 32,768 tokens \\
-\bottomrule
-\end{tabular}
-\end{table}
+Table~\ref{tab:domain_qa_config} in Appendix~\ref{app:generation_settings} lists the chunking, extraction, and decoding values used here.
+We fixed these values before generation and did not search over them.
 
 \subsubsection{Geometry-Grounded QA Generation}
 \label{subsubsec:geometry_qa_generation}
@@ -311,33 +290,7 @@ Each accepted record stores
 \end{equation}
 where $\mathcal{A}_k$ contains the metric identity, body part, body region, exact value, unit, interpretation, and summary for every supervised angle slot.
 This representation supports both language instruction tuning and continuous angle-slot supervision while retaining a traceable link to the underlying reconstruction-derived evidence.
-
-\begin{table}[t]
-\centering
-\caption{Geometry-grounded QA generation settings.}
-\label{tab:geometry_qa_settings}
-\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabular}{ll}
-\toprule
-\textbf{Item} & \textbf{Setting} \\
-\midrule
-Input representation & Per-image metric record \\
-Evidence representation & Metric facts and graph paths \\
-Selected images & 3,000 \\
-Image selection & Balanced-proportional sampling \\
-QA pairs per image & 2 \\
-LLM & Qwen3.6-35B-A3B \\
-Context length & 16,000 tokens \\
-Temperature & 0.15 \\
-Maximum regeneration attempts & 2 \\
-Primary supervision & Exact angles in degrees \\
-Diversity control & Rolling memory and family rotation \\
-Quality control & Rule validation and deterministic templates \\
-\bottomrule
-\end{tabular}
-\end{table}
+Table~\ref{tab:geometry_qa_settings} in Appendix~\ref{app:generation_settings} lists the sampling and decoding values for this set, again fixed in advance.
 
 \subsection{Dataset Composition}
 \label{subsec:dataset_composition}

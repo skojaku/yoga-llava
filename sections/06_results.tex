@@ -10,6 +10,13 @@ The test $R^2$ is 0.832 and differs from the validation $R^2$ of 0.874 used for 
 In addition, 57.01\% and 70.63\% of predictions fall within $10^\circ$ and $15^\circ$, respectively, of the reconstruction-derived references.
 These results indicate that the model can identify and express the requested measurement from the supplied geometry under a known answer structure.
 
+Two reference points bound this result.
+A constant predictor at the test mean attains an $R^2$ of 0 by construction.
+The reported $R^2$ and RMSE imply a target standard deviation of $53.24^\circ$, the RMSE of that predictor, against which YogaLLaVA V3 reduces RMSE by 59\%.
+At the other end, 518 of the 521 targets are supplied among the geometry tokens (Sec.~\ref{sec:evaluation_protocol}).
+An oracle that selects the correct descriptor and copies its value therefore attains an MAE of $0^\circ$ and an $R^2$ of 1 on those slots.
+The distance from that upper bound measures how often the model selects the wrong descriptor or fails to reproduce a value it was given.
+
 \begin{table}[t]
     \centering
     \caption{Teacher-forced angle-slot regression on the held-out test set.

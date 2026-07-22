@@ -35,7 +35,7 @@ A body posture is arbitrarily linked to its cultural or social meaning.
 Vision--language models fall short in inferring meaning from appearance when subtle physical differences carry substantially different meanings.
 This failure can endorse harmful form in physical therapy or exercise and misrepresent postures whose meaning matters to the communities that practice them.
 We address this limitation by pairing images with explicit, measured body geometry and conditioning a vision--language model on that geometry to capture meaning changes hidden in small visual differences.
-Using yoga as a challenging domain, we introduce \textbf{YogaAlign}, a benchmark that extends Yoga-82 with explicit, measured body geometry paired with question--answer annotations.
+Using yoga as a challenging domain, we introduce \textbf{YogaAlign}, a benchmark that extends Yoga-82 with measured body geometry paired with question--answer annotations.
 Building on YogaAlign, we train \textbf{YogaLLaVA V3}, a vision--language model that conditions on body geometry through new learnable tokens encoding the measurements of the geometric structure.
 Instead of guessing or rounding, YogaLLaVA V3 expresses precise numeric measurements in generated language by leaving a placeholder token at each numeric position and replacing it with a continuous value from an additional regression head.
 YogaLLaVA V3 produces the correct number of numeric measurements in 86.1\% of evaluation samples, a 26\% relative gain over the best image-only baseline, Qwen2.5-VL-7B (68.1\%).
@@ -59,7 +59,7 @@ The same failure can misrepresent postures whose meaning matters to the communit
 
 Inferring meaning from appearance therefore requires explicit, measured body geometry expressed in language.
 Human pose analysis is commonly formulated as keypoint localization~\cite{cao2019openpose,sun2019deep}, skeleton recovery, or action recognition.
-These tasks provide perceptual representations but do not answer natural-language questions about configuration, such as which side is more flexed or how a geometric property should be verbalized.
+These tasks provide perceptual representations but do not answer natural-language questions about configuration, such as which side is more flexed or how a geometric property should be described in words.
 Such questions require a model to connect image evidence with explicit body measurements and linguistic reasoning.
 
 Yoga is a particularly demanding setting for this problem.
@@ -75,20 +75,20 @@ A direct combination, however, leaves two unresolved issues.
 First, dense mesh outputs must be converted into compact and interpretable measurements.
 Second, continuous geometric values must be integrated into language generation without reducing numeric prediction to unconstrained text-token generation.
 
-We introduce \textbf{YogaAlign}, a benchmark that pairs Yoga-82 images with explicit, measured body geometry and question--answer annotations grounded in that geometry.
-The geometry comes from SAM 3D Body reconstructions, summarized into a structured taxonomy of angular, symmetry, trunk, and support descriptors.
+We introduce \textbf{YogaAlign}, a benchmark that pairs Yoga-82 images with measured body geometry and question--answer annotations grounded in that geometry.
+The geometry comes from SAM 3D Body reconstructions, summarized into a taxonomy of angular, symmetry, trunk, and support descriptors.
 The annotations form two sets.
 We produce pose-level domain-knowledge QA by evidence-conditioned synthesis from textual sources.
 We generate geometry-grounded QA directly from the measurements of each image.
 
 Building on YogaAlign, we train \textbf{YogaLLaVA V3}, a vision--language model that conditions on this geometry during generation.
 Ordered \texttt{<GEO>} tokens carry the angular subset of the measurements.
-A dedicated \texttt{<ANGLE>} mechanism separates the decision to emit a numeric slot from continuous scalar regression and feeds the predicted value back into the autoregressive context.
-In free-running evaluation, YogaLLaVA V3 produces the correct number of numeric measurements more often than the best baseline (86.1\% of samples versus 68.1\% for Qwen2.5-VL-7B) and attains lower angular error on the shared common-success subset (a mean absolute error of $17.65^\circ$ versus $42.80^\circ$ for LLaVA-1.5-7B).
+The \texttt{<ANGLE>} mechanism separates the decision to place a numeric slot from continuous scalar regression and feeds the predicted value back into the autoregressive context.
+In free-running evaluation, YogaLLaVA V3 produces the correct number of numeric measurements more often than the best baseline (86.1\% of samples versus 68.1\% for Qwen2.5-VL-7B) and achieves lower angular error on the shared common-success subset (a mean absolute error of $17.65^\circ$ versus $42.80^\circ$ for LLaVA-1.5-7B).
 
 We make three contributions.
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
-    \item We introduce \textbf{YogaAlign}, a geometry-grounded extension of Yoga-82 containing structured 3D-derived descriptors and 10,090 instruction-style question--answer pairs across 82 asanas.
+    \item We introduce \textbf{YogaAlign}, a geometry-grounded extension of Yoga-82 containing 3D-derived descriptors and 10,090 instruction-style question--answer pairs across 82 asanas.
     \item We develop a two-part annotation procedure that combines evidence-conditioned yoga-domain knowledge with image-specific geometric measurements, exact angular targets, rule-based validation, and traceable provenance.
     \item We build \textbf{YogaLLaVA V3} on YogaAlign, integrating metric-aware geometry tokens, continuous angle-slot regression over descriptors supplied through those tokens, and scalar feedback into a vision--language decoder, and evaluate both teacher-forced angle regression and free-running generation.
 \end{itemize}
@@ -128,10 +128,10 @@ YogaAlign builds on that diversity and supplies the missing pairing of reconstru
 \section{YogaAlign Dataset}
 \label{sec:dataset}
 
-We construct \textbf{YogaAlign}, a geometry-grounded vision--language benchmark that extends Yoga-82 with reconstructed 3D body structure, interpretable geometric measurements, and instruction-style question--answer (QA) annotations.
+We construct \textbf{YogaAlign}, a geometry-grounded vision--language benchmark that extends Yoga-82 with reconstructed 3D body structure, geometric measurements, and instruction-style question--answer (QA) annotations.
 The benchmark supports reasoning beyond pose recognition, including joint-angle interpretation, bilateral comparison, regional alignment analysis, and pose-specific instructional knowledge.
 At a high level, we construct it in three stages as follows.
-We reconstruct a 3D body from each image, then extract structured geometric descriptors, and finally generate two QA sets grounded in either pose-level textual knowledge or image-specific geometry.
+We reconstruct a 3D body from each image, then extract geometric descriptors, and finally generate two QA sets grounded in either pose-level textual knowledge or image-specific geometry.
 
 \subsection{Source Images and 3D Body Reconstruction}
 \label{subsec:source_reconstruction}
@@ -139,7 +139,7 @@ We reconstruct a 3D body from each image, then extract structured geometric desc
 \noindent\textbf{Yoga-82 source dataset.}
 YogaAlign is built on Yoga-82~\cite{verma2020yoga82}, which contains 28,478 images spanning 82 fine-grained yoga-pose categories.
 The images were collected from online sources and exhibit substantial variation in viewpoint, background, illumination, clothing, practitioner appearance, and execution style.
-Yoga-82 is therefore a challenging substrate for geometry-aware reasoning.
+Yoga-82 is therefore a challenging setting for geometry-aware reasoning.
 Many poses differ through small changes in limb articulation, trunk orientation, balance, or bilateral symmetry.
 The original dataset, however, provides only RGB images and category labels.
 It does not include 3D body structure, geometric measurements, or language annotations.
@@ -166,7 +166,7 @@ Their accuracy may be affected by self-occlusion, foreshortening, loose clothing
 \label{subsec:geometric_measurements}
 
 Dense meshes are expressive but too high-dimensional for language-grounded pose analysis.
-We therefore distill each reconstruction into a compact set of anatomically interpretable descriptors (Table~\ref{tab:geometric_metrics}).
+We therefore reduce each reconstruction to a compact set of anatomically interpretable descriptors (Table~\ref{tab:geometric_metrics}).
 We map the raw coordinates to a canonical frame before measurement.
 Centering the vertices and keypoints at the mesh centroid removes global translation, and a fixed 3D coordinate convention supplies a consistent vertical axis.
 
@@ -233,9 +233,9 @@ Bilateral descriptors quantify differences between corresponding left and right 
 Scale-dependent quantities (stance width, shoulder-height offset, and hip-height offset) are normalized by the vertical extent of the reconstructed mesh to reduce sensitivity to body and reconstruction scale.
 
 \noindent\textbf{Structured metric records.}
-Each image is paired with a structured record containing the descriptor name, anatomical region, numeric value, unit, definition, and discretized interpretation state.
+Each image is paired with a record containing the descriptor name, anatomical region, numeric value, unit, definition, and discretized interpretation state.
 Fixed thresholds map continuous measurements to language-compatible states such as \emph{nearly straight}, \emph{deeply bent}, \emph{upright}, \emph{rotated}, or \emph{asymmetric}.
-These states facilitate controlled verbalization while the underlying numeric values preserve exact supervision.
+The states keep the wording consistent, and the underlying numeric values preserve exact supervision.
 We use the measurements only as reconstruction-derived alignment indicators for dataset construction.
 The measurements are not intended as clinical, diagnostic, or rehabilitation measurements.
 
@@ -244,7 +244,7 @@ The measurements are not intended as clinical, diagnostic, or rehabilitation mea
 
 YogaAlign contains two complementary QA sets.
 The \emph{domain-knowledge} set captures pose-level semantic and instructional information that cannot be inferred reliably from body geometry alone.
-The \emph{geometry-grounded} set verbalizes image-specific angular evidence extracted from the reconstructed body.
+The \emph{geometry-grounded} set expresses image-specific angular evidence extracted from the reconstructed body.
 Table~\ref{tab:qa_annotation_overview} contrasts their evidence sources and supervision targets.
 
 \begin{table*}[t]
@@ -290,10 +290,11 @@ An LLM-based extractor first converts each chunk $c_i$ into two evidence represe
 \label{eq:domain_extraction}
 \end{equation}
 where $p$ denotes the pose, $R_i$ is a set of compact relational facts, and $B_i$ is a set of structured knowledge units.
-Relational facts encode atomic subject--relation--object statements suited to concise factual questions.
+Relational facts encode single subject--relation--object statements suited to concise factual questions.
 Knowledge units retain multi-step or explanatory content suited to procedural, alignment, safety, modification, breathing, sequencing, and correction questions.
-Extraction is restricted to statements explicitly supported by the current source chunk.
-Unsupported claims that a pose cures or treats a medical condition are not retained as factual supervision.
+We instruct the extractor to restrict its output to statements supported by the current source chunk and to drop claims that a pose cures or treats a medical condition.
+Both restrictions are carried by the extraction prompt alone.
+No independent check enforces them, and we have not audited the retained records for unsupported medical claims.
 
 \begin{table*}[t]
 \centering
@@ -307,7 +308,7 @@ Unsupported claims that a pose cures or treats a medical condition are not retai
 \textbf{Representation} & \textbf{Role} & \textbf{Typical content} & \textbf{Supported QA form} \\
 \midrule
 Relational facts &
-Atomic, evidence-backed statements &
+Single-fact, evidence-backed statements &
 Names, difficulty, benefits, contraindications, precautions, props, muscles,
 modifications, and related poses &
 Concise factual and reverse-lookup questions. \\
@@ -330,40 +331,19 @@ We instruct the generator to use only the supplied evidence.
 Compact signatures of previously extracted facts, knowledge units, and questions are maintained across chunks to suppress semantic repetition.
 Question families are varied across factual, procedural, scenario-based, safety, reverse-lookup, correction, and teacher-cue formulations.
 Each accepted item stores the pose, source-chunk identifier, question, answer, QA type, supporting facts, supporting knowledge units, and an evidence phrase.
-Every answer therefore remains traceable to its source evidence.
-
-\begin{table}[t]
-\centering
-\caption{Domain-knowledge QA generation settings.}
-\label{tab:domain_qa_config}
-\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabular}{ll}
-\toprule
-\textbf{Item} & \textbf{Setting} \\
-\midrule
-Knowledge organization & One document per pose \\
-Chunk size / overlap & 5,000 / 500 characters \\
-Maximum relational facts per chunk & 8 \\
-Maximum knowledge units per chunk & 3 \\
-Maximum QA pairs per chunk & 10 \\
-Maximum QA pairs per knowledge unit & 3 \\
-Generation temperature & 0 \\
-Context length & 32,768 tokens \\
-\bottomrule
-\end{tabular}
-\end{table}
+Every answer remains traceable to its source evidence.
+Table~\ref{tab:domain_qa_config} in Appendix~\ref{app:generation_settings} lists the chunking, extraction, and decoding values used here.
+We fixed these values before generation and did not search over them.
 
 \subsubsection{Geometry-Grounded QA Generation}
 \label{subsubsec:geometry_qa_generation}
 
 The second set is generated directly from the measurements associated with an individual image.
-We restrict this set to degree-valued descriptors, which provide interpretable continuous targets.
+We restrict this set to degree-valued descriptors, which provide continuous targets.
 Non-angular normalized quantities, including stance width, body-center offset, and shoulder- and hip-height differences, remain part of the geometric annotation taxonomy but are not used for geometry-QA generation or angle-regression supervision.
 
 \noindent\textbf{Metric facts and geometry graphs.}
-For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to an atomic metric fact
+For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to a single metric fact
 \begin{equation}
 f_m=(r_m,b_m,n_m,v_m,s_m),
 \label{eq:metric_fact}
@@ -381,7 +361,7 @@ Direct paths target one descriptor.
 Comparison paths pair corresponding left and right descriptors.
 Regional paths combine multiple measurements.
 Misconception paths verify a proposed condition.
-Instructor-observation paths verbalize a salient measured property.
+Instructor-observation paths express a notable measured property.
 
 \begin{table*}[t]
 \centering
@@ -398,7 +378,7 @@ Direct angle & One angular metric and its state & Read and interpret a measured 
 Comparison & A paired left--right metric & Compare corresponding body parts under a predefined rule & Include both values and the resulting comparison. \\
 Region summary & Multiple metrics from one region & Integrate a lower-body, upper-body, or trunk--neck configuration & Combine all selected values coherently. \\
 Misconception & Metrics relevant to a proposed condition & Confirm or reject an alignment statement & State the decision and cite the required values. \\
-Instructor observation & A salient metric and severity state & Express a teacher-style observation & Describe the measured property and cite its value. \\
+Instructor observation & A notable metric and severity state & Express a teacher-style observation & Describe the measured property and cite its value. \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -423,11 +403,11 @@ For a selected path $p_k$, the generator receives its evidence $E(p_k)$ and rece
 \end{equation}
 The prompt requires the pose name in the question and every selected angular value in the answer.
 It prohibits internal identifiers and unsupported spatial or biomechanical claims.
-The model therefore verbalizes a predefined evidence path.
+The model therefore puts a predefined evidence path into words.
 It does not infer unrestricted yoga knowledge.
 
 \noindent\textbf{Validation and numeric targets.}
-We check each candidate QA pair against rule-based criteria for pose-name presence, required numeric values, anatomical laterality, prohibited internal terms, path-specific constraints, and near-duplicate questions.
+We check each candidate QA pair against rule-based criteria for pose-name presence, required numeric values, left--right consistency, prohibited internal terms, path-specific constraints, and near-duplicate questions.
 Failed samples are regenerated at most twice, with the violated criteria supplied to the generator.
 If both regenerations fail, we use a deterministic evidence-based template.
 Each accepted record stores
@@ -437,33 +417,7 @@ Each accepted record stores
 \end{equation}
 where $\mathcal{A}_k$ contains the metric identity, body part, body region, exact value, unit, interpretation, and summary for every supervised angle slot.
 This representation supports both language instruction tuning and continuous angle-slot supervision while retaining a traceable link to the underlying reconstruction-derived evidence.
-
-\begin{table}[t]
-\centering
-\caption{Geometry-grounded QA generation settings.}
-\label{tab:geometry_qa_settings}
-\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabular}{ll}
-\toprule
-\textbf{Item} & \textbf{Setting} \\
-\midrule
-Input representation & Per-image metric record \\
-Evidence representation & Metric facts and graph paths \\
-Selected images & 3,000 \\
-Image selection & Balanced-proportional sampling \\
-QA pairs per image & 2 \\
-LLM & Qwen3.6-35B-A3B \\
-Context length & 16,000 tokens \\
-Temperature & 0.15 \\
-Maximum regeneration attempts & 2 \\
-Primary supervision & Exact angles in degrees \\
-Diversity control & Rolling memory and family rotation \\
-Quality control & Rule validation and deterministic templates \\
-\bottomrule
-\end{tabular}
-\end{table}
+Table~\ref{tab:geometry_qa_settings} in Appendix~\ref{app:generation_settings} lists the sampling and decoding values for this set, again fixed in advance.
 
 \subsection{Dataset Composition}
 \label{subsec:dataset_composition}
@@ -480,7 +434,7 @@ This distinction is retained throughout training and evaluation so that pose-lev
 \label{sec:method_overview}
 
 We propose \textbf{YogaLLaVA V3}, a geometry-conditioned vision--language model for fine-grained yoga-pose understanding.
-Given an RGB image $I$, a natural-language question $q$, and an ordered set of structured body measurements $\mathcal{G}$, the model generates an answer $y$ containing qualitative explanations and, when required, continuous angular values.
+Given an RGB image $I$, a natural-language question $q$, and an ordered set of body measurements $\mathcal{G}$, the model generates an answer $y$ containing qualitative explanations and, when required, continuous angular values.
 We formulate this task as conditional generation:
 \begin{equation}
     p_{\Theta}(y\mid I,q,\mathcal{G}),
@@ -490,11 +444,11 @@ where $\Theta$ denotes the trainable model parameters.
 
 As illustrated in Fig.~\ref{fig:yogallava_architecture}, YogaLLaVA V3 extends LLaVA-1.5-7B with two components for continuous geometric reasoning.
 First, a geometry encoder converts ordered scalar body measurements into tokens in the language-model embedding space.
-Second, an angle-regression head predicts a continuous value whenever the decoder emits a dedicated \texttt{<ANGLE>} token.
+Second, an angle-regression head predicts a continuous value whenever the decoder produces an \texttt{<ANGLE>} token.
 The predicted scalar is subsequently embedded back into the sequence, so that later words and angle slots condition on previously generated measurements.
 The design preserves standard autoregressive language generation and does not represent angles solely as sequences of discrete text tokens.
 
-The structured measurements are obtained from the SAM 3D Body reconstruction and metric extraction described in Sec.~\ref{sec:dataset}.
+The measurements are obtained from the SAM 3D Body reconstruction and metric extraction described in Sec.~\ref{sec:dataset}.
 Accordingly, YogaLLaVA V3 reasons jointly over visual evidence, language, and supplied geometry.
 It does not independently reconstruct the complete geometry vector from RGB pixels.
 
@@ -502,10 +456,10 @@ It does not independently reconstruct the complete geometry vector from RGB pixe
     \centering
     \includegraphics[width=0.98\textwidth]{method.png}
     \caption{Overview of YogaLLaVA V3. An input image is encoded by the frozen
-    LLaVA visual pathway, while an ordered set of degree-valued body descriptors
+    LLaVA vision encoder and projector, while an ordered set of degree-valued body descriptors
     is mapped to metric-aware \texttt{<GEO>} tokens. The causal language decoder
     attends jointly to visual, geometric, and textual context. When the decoder
-    emits an \texttt{<ANGLE>} token, a regression head predicts the associated
+    produces an \texttt{<ANGLE>} token, a regression head predicts the associated
     continuous value, which is embedded back into the sequence to condition
     subsequent generation.}
     \label{fig:yogallava_architecture}
@@ -534,14 +488,14 @@ Explicitly modeling validity is necessary because a missing measurement is seman
 \subsection{Multimodal Geometry Representation}
 \label{sec:geometry_representation}
 
-\noindent\textbf{Visual and language pathways.}
+\noindent\textbf{Visual and language inputs.}
 The image is processed by the pretrained CLIP ViT-L/14-336 vision encoder in LLaVA.
 Its patch-level features are projected into the language-model hidden space through the frozen multimodal projector.
 The instruction and question are tokenized using the LLaVA tokenizer and combined with the projected visual features in the standard LLaVA input sequence.
 
-To inject structured geometry, we append exactly $K$ special \texttt{<GEO>} placeholders in a fixed canonical order.
+To supply the geometry, we append exactly $K$ special \texttt{<GEO>} placeholders in a fixed canonical order.
 Before decoding, the ordinary embeddings of these placeholders are replaced by geometry representations with the same dimensionality as the language-model hidden states.
-Consequently, visual features, text tokens, and structured measurements are processed within a shared autoregressive sequence.
+Consequently, visual features, text tokens, and measurements are processed within a shared autoregressive sequence.
 
 \noindent\textbf{Fourier encoding of continuous measurements.}
 For every available descriptor, we normalize its value to $[0,1]$:
@@ -585,14 +539,14 @@ The final token for descriptor $k$ is
     \label{eq:geometry_token}
 \end{equation}
 where $\mathbf{e}^{\mathrm{miss}}\in\mathbb{R}^{d}$ is a learned missing-value embedding and $\operatorname{LN}$ denotes layer normalization.
-The ordered geometry sequence is therefore
+The ordered geometry sequence is
 \begin{equation}
     \mathbf{G}=[\mathbf{g}_1,\ldots,\mathbf{g}_K]
     \in\mathbb{R}^{K\times d}.
     \label{eq:geometry_sequence}
 \end{equation}
 These vectors replace the corresponding \texttt{<GEO>} embeddings.
-The decoder therefore attends jointly to the image, question, and metric-specific continuous geometry.
+The decoder attends jointly to the image, question, and metric-specific continuous geometry.
 
 \subsection{Angle-Aware Language Generation}
 \label{sec:angle_generation}
@@ -696,16 +650,16 @@ After adding \texttt{<GEO>} and \texttt{<ANGLE>} to the vocabulary, the input-em
 \subsection{Autoregressive Inference}
 \label{sec:inference}
 
-At inference time, SAM 3D Body reconstruction provides the ordered geometry descriptors, while the LLaVA visual pathway encodes the input image.
+At inference time, SAM 3D Body reconstruction provides the ordered geometry descriptors, while the frozen LLaVA vision encoder and projector process the input image.
 The image, geometry tokens, instruction, and question are supplied without a reference answer.
 
 Decoding proceeds autoregressively.
 Ordinary tokens follow the standard LLaVA generation process.
 When \texttt{<ANGLE>} is selected, the hidden state that produced it is passed to the regression head to obtain $\widehat{v}_j$.
-The prediction is converted to degrees for the final response and encoded through Eq.~\eqref{eq:angle_feedback} as the embedding of the emitted \texttt{<ANGLE>} token before decoding resumes.
+The prediction is converted to degrees for the final response and encoded through Eq.~\eqref{eq:angle_feedback} as the embedding of that \texttt{<ANGLE>} token before decoding resumes.
 After generation, the placeholders are replaced in order by their predicted degree values.
-Token probabilities and scalar predictions are therefore not averaged or combined at the output level.
-The two interact through the slot-emission and continuous-value feedback mechanism.
+Token probabilities and scalar predictions are not averaged or combined at the output level.
+The two interact through the slot-placement and continuous-value feedback mechanism.
 \section{Experiments}
 \label{sec:experimental_setup}
 
@@ -748,7 +702,7 @@ YogaLLaVA V3 is initialized from LLaVA-1.5-7B.
 Its CLIP ViT-L/14-336 image encoder operates at $336\!\times\!336$ resolution, and the multimodal projector maps the visual features to the 4,096-dimensional language space.
 The maximum sequence length is 1,280 tokens.
 Both the vision encoder and multimodal projector remain frozen.
-The language decoder is adapted using the LoRA settings described in Sec.~\ref{sec:training_objective}, together with the proposed geometry and angle components.
+The language decoder is adapted using the LoRA settings described in Sec.~\ref{sec:training_objective}, together with the geometry and angle components.
 
 We train for 12 epochs using AdamW with weight decay 0.01 and gradient clipping at 1.0.
 A per-device batch size of four and eight-step gradient accumulation produce an effective batch size of 32.
@@ -777,14 +731,14 @@ Given $N$ reference angles $\theta_i$ and predictions $\widehat{\theta}_i$, we r
 \label{eq:evaluation_errors}
 \end{equation}
 Teacher forcing isolates continuous prediction given the correct linguistic slot structure.
-It does not evaluate whether the model can autonomously emit, order, and contextualize the required slots.
+It does not evaluate whether the model can produce, order, and correctly place the required slots on its own.
 
 \noindent\textbf{Autoregressive generation.}
-We therefore additionally evaluate free-running generation on all 310 geometry-grounded test records.
-YogaLLaVA V3 receives the image, question, and structured geometry.
+We also evaluate free-running generation on all 310 geometry-grounded test records.
+YogaLLaVA V3 receives the image, question, and geometry input.
 LLaVA-1.5-7B and Qwen2.5-VL-7B-Instruct~\cite{bai2025qwen25vl} are evaluated zero-shot using only the image and question.
 The questions specify the target metrics and their expected order but do not reveal numeric values.
-We report (i) slot-count accuracy over the complete test set and (ii) numeric error on the common-success subset for which all models generate the correct number of values.
+We report (i) slot-count accuracy over the full test set and (ii) numeric error on the common-success subset for which all models generate the correct number of values.
 This distinction avoids comparing numeric errors computed on different model-specific subsets.
 
 All numeric references are pseudo-measurements derived from SAM 3D Body.
@@ -803,6 +757,13 @@ YogaLLaVA V3 obtains an MAE of $13.98^\circ$ and an RMSE of $21.82^\circ$, with 
 The test $R^2$ is 0.832 and differs from the validation $R^2$ of 0.874 used for checkpoint selection (Sec.~\ref{sec:implementation_details}).
 In addition, 57.01\% and 70.63\% of predictions fall within $10^\circ$ and $15^\circ$, respectively, of the reconstruction-derived references.
 These results indicate that the model can identify and express the requested measurement from the supplied geometry under a known answer structure.
+
+Two reference points bound this result.
+A constant predictor at the test mean attains an $R^2$ of 0 by construction.
+The reported $R^2$ and RMSE imply a target standard deviation of $53.24^\circ$, the RMSE of that predictor, against which YogaLLaVA V3 reduces RMSE by 59\%.
+At the other end, 518 of the 521 targets are supplied among the geometry tokens (Sec.~\ref{sec:evaluation_protocol}).
+An oracle that selects the correct descriptor and copies its value therefore attains an MAE of $0^\circ$ and an $R^2$ of 1 on those slots.
+The distance from that upper bound measures how often the model selects the wrong descriptor or fails to reproduce a value it was given.
 
 \begin{table}[t]
     \centering
@@ -865,9 +826,9 @@ These differences may arise from descriptor-specific distributions, reconstructi
 Identifying their individual effects requires further controlled analysis.
 
 The symmetry categories contain only three or four slots and should not be used to draw broad conclusions.
-Hip symmetry is additionally distinct because no dedicated hip-symmetry token is included in the 14-descriptor input vocabulary.
+Hip symmetry is also distinct because no dedicated hip-symmetry token is included in the 14-descriptor input vocabulary.
 Its three test targets therefore cannot be retrieved from a corresponding independent input token.
-Despite the missing token, hip symmetry attains an MAE of $7.82^\circ$, lower than several descriptors with dedicated input tokens and far larger test support.
+Despite the missing token, hip symmetry reaches an MAE of $7.82^\circ$, lower than several descriptors with dedicated input tokens and far larger test support.
 Under a retrieval-based reading of the regression, this direction is counterintuitive, and we note it as an open question given the three-slot sample.
 
 \begin{table}[t]
@@ -902,19 +863,19 @@ Under a retrieval-based reading of the regression, this direction is counterintu
 \subsection{Autoregressive Generation}
 \label{sec:generation_comparison}
 
-Table~\ref{tab:generation_results} evaluates complete free-running generation.
-YogaLLaVA V3 emits the correct number of numeric values for 267 of 310 records (86.1\%), compared with 66.1\% for LLaVA-1.5-7B and 68.1\% for Qwen2.5-VL-7B.
+Table~\ref{tab:generation_results} evaluates free-running generation.
+YogaLLaVA V3 produces the correct number of numeric values for 267 of 310 records (86.1\%), compared with 66.1\% for LLaVA-1.5-7B and 68.1\% for Qwen2.5-VL-7B.
 The Wilson 95\% confidence interval for YogaLLaVA V3 is $[81.8,89.5]\%$ and overlaps neither baseline interval ($[60.7,71.2]\%$ for LLaVA-1.5-7B and $[62.7,73.0]\%$ for Qwen2.5-VL-7B).
-The proposed model is therefore more reliable at determining when and how many continuous outputs are required.
+YogaLLaVA V3 is therefore more reliable at determining when and how many continuous outputs are required.
 
 This comparison evaluates complete models.
 It does not isolate a single architectural factor.
-YogaLLaVA V3 receives structured geometry and task-specific instruction tuning, whereas the baselines are image-only and zero-shot.
-The observed advantage therefore reflects the combined effect of geometry conditioning, domain adaptation, and continuous angle regression.
+YogaLLaVA V3 receives the geometry input and task-specific instruction tuning, whereas the baselines are image-only and zero-shot.
+The observed advantage reflects the combined effect of geometry conditioning, domain adaptation, and continuous angle regression.
 It should not be read as a modality-matched ablation.
 
 For numeric comparison, we use the 160-record common-success subset on which all three models produce the correct slot count.
-Conditioning on joint success removes every record where a baseline failed to emit a valid slot count.
+Conditioning on joint success removes every record where a baseline produced an invalid slot count.
 Because such records are plausibly the harder ones, the numeric gaps below hold conditional on this selection.
 YogaLLaVA V3 achieves a slot-level MAE of $17.65^\circ$, compared with $42.80^\circ$ for LLaVA and $46.91^\circ$ for Qwen.
 Its record-level macro MAE is $16.98^\circ$ with a 95\% bootstrap confidence interval of $[14.15,20.17]^\circ$.
@@ -945,24 +906,88 @@ Paired bootstrap differences relative to YogaLLaVA are $24.85^\circ$ ($[19.45,30
 \label{sec:result_interpretation}
 
 The teacher-forced and autoregressive evaluations characterize complementary capabilities.
-The former measures continuous prediction at known answer slots, whereas the latter additionally requires the model to decide whether a numeric slot is needed, emit and order the correct number of slots, preserve consistency between numbers and language, and terminate appropriately.
-Reporting them separately avoids conflating regression accuracy with complete generation quality.
+The former measures continuous prediction at known answer slots, whereas the latter additionally requires the model to decide whether a numeric slot is needed, produce and order the correct number of slots, preserve consistency between numbers and language, and terminate appropriately.
+Reporting them separately avoids conflating regression accuracy with generation quality.
 
 The current evidence supports geometry-conditioned measurement selection and expression.
 The references inherit uncertainty from monocular reconstruction, including viewpoint, occlusion, foreshortening, clothing, inversion, depth, and left--right ambiguities.
 The references should therefore not be interpreted as clinical, diagnostic, rehabilitation, motion-capture, or manually verified biomechanical ground truth.
+
+The misconception and instructor-observation families place a further limitation on the present scope.
+Both train the model to issue corrective, teacher-style judgments, and their supervision comes from the same measurements we decline to certify as clinically meaningful.
+We have not checked the resulting corrections against expert instruction.
+The generated judgments are therefore unvalidated as instructional advice.
+
 Finally, the experiments do not isolate modality contributions through ablation and do not test generalization to unseen yoga-pose categories.
 Both remain directions for future evaluation.
 \section{Conclusion}
 \label{sec:conclusion}
 
 We introduced YogaAlign, a geometry-grounded extension of Yoga-82, and YogaLLaVA V3, a vision--language model that integrates structured body measurements with continuous angle-aware generation.
-YogaAlign combines pose-level domain knowledge with image-specific QA derived from explicit reconstruction-based evidence paths.
-YogaLLaVA V3 represents these measurements as metric-aware geometry tokens and predicts continuous values at dedicated angle slots.
+YogaAlign combines pose-level domain knowledge with image-specific QA derived from reconstruction-based evidence paths.
+YogaLLaVA V3 represents these measurements as metric-aware geometry tokens and predicts continuous values at angle slots.
 The experiments demonstrate reliable question-conditioned selection and expression of supplied geometry under both teacher-forced and autoregressive evaluation.
 They also define the present scope.
 YogaLLaVA V3 reasons over monocular reconstruction-derived measurements and is not a substitute for independently validated biomechanical assessment.
 Future work should evaluate modality-matched ablations, human-verified geometric references, pose-held-out generalization, and the consistency of generated corrections with expert instruction.
+\appendices
+
+\section{Annotation Generation Settings}
+\label{app:generation_settings}
+
+Tables~\ref{tab:domain_qa_config} and~\ref{tab:geometry_qa_settings} record the values used to generate the two QA sets described in Sec.~\ref{subsec:qa_generation}.
+We fixed every value before generation and did not tune any of them against a held-out measurement.
+The tables are reported for reproduction and carry no claim of optimality.
+
+\begin{table}[h]
+\centering
+\caption{Domain-knowledge QA generation settings.}
+\label{tab:domain_qa_config}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabular}{ll}
+\toprule
+\textbf{Item} & \textbf{Setting} \\
+\midrule
+Knowledge organization & One document per pose \\
+Chunk size / overlap & 5,000 / 500 characters \\
+Maximum relational facts per chunk & 8 \\
+Maximum knowledge units per chunk & 3 \\
+Maximum QA pairs per chunk & 10 \\
+Maximum QA pairs per knowledge unit & 3 \\
+Generation temperature & 0 \\
+Context length & 32,768 tokens \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Geometry-grounded QA generation settings.}
+\label{tab:geometry_qa_settings}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabular}{ll}
+\toprule
+\textbf{Item} & \textbf{Setting} \\
+\midrule
+Input representation & Per-image metric record \\
+Evidence representation & Metric facts and graph paths \\
+Selected images & 3,000 \\
+Image selection & Balanced-proportional sampling \\
+QA pairs per image & 2 \\
+LLM & Qwen3.6-35B-A3B~\cite{qwen2026qwen36} \\
+Context length & 16,000 tokens \\
+Temperature & 0.15 \\
+Maximum regeneration attempts & 2 \\
+Primary supervision & Exact angles in degrees \\
+Diversity control & Rolling memory and family rotation \\
+Quality control & Rule validation and deterministic templates \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

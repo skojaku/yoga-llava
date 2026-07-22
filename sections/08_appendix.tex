@@ -1,0 +1,58 @@
+\appendices
+
+\section{Annotation Generation Settings}
+\label{app:generation_settings}
+
+Tables~\ref{tab:domain_qa_config} and~\ref{tab:geometry_qa_settings} record the values used to generate the two QA sets described in Sec.~\ref{subsec:qa_generation}.
+We fixed every value before generation and did not tune any of them against a held-out measurement.
+The tables are reported for reproduction and carry no claim of optimality.
+
+\begin{table}[h]
+\centering
+\caption{Domain-knowledge QA generation settings.}
+\label{tab:domain_qa_config}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabular}{ll}
+\toprule
+\textbf{Item} & \textbf{Setting} \\
+\midrule
+Knowledge organization & One document per pose \\
+Chunk size / overlap & 5,000 / 500 characters \\
+Maximum relational facts per chunk & 8 \\
+Maximum knowledge units per chunk & 3 \\
+Maximum QA pairs per chunk & 10 \\
+Maximum QA pairs per knowledge unit & 3 \\
+Generation temperature & 0 \\
+Context length & 32,768 tokens \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Geometry-grounded QA generation settings.}
+\label{tab:geometry_qa_settings}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabular}{ll}
+\toprule
+\textbf{Item} & \textbf{Setting} \\
+\midrule
+Input representation & Per-image metric record \\
+Evidence representation & Metric facts and graph paths \\
+Selected images & 3,000 \\
+Image selection & Balanced-proportional sampling \\
+QA pairs per image & 2 \\
+LLM & Qwen3.6-35B-A3B~\cite{qwen2026qwen36} \\
+Context length & 16,000 tokens \\
+Temperature & 0.15 \\
+Maximum regeneration attempts & 2 \\
+Primary supervision & Exact angles in degrees \\
+Diversity control & Rolling memory and family rotation \\
+Quality control & Rule validation and deterministic templates \\
+\bottomrule
+\end{tabular}
+\end{table}
