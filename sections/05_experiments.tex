@@ -79,7 +79,8 @@ The questions specify the target metrics and their expected order but do not rev
 We report (i) slot-count accuracy over the complete test set and (ii) numeric error on the common-success subset for which all models generate the correct number of values.
 This distinction avoids comparing numeric errors computed on different model-specific subsets.
 
-All numeric references are pseudo-measurements derived from SAM 3D Body, not motion capture or manually verified biomechanical annotations.
+All numeric references are pseudo-measurements derived from SAM 3D Body.
+They are not motion capture or manually verified biomechanical annotations.
 Moreover, 518 of the 521 teacher-forced test targets are present in the structured geometry input.
 The primary evaluation therefore measures question-conditioned descriptor selection, slot filling, reproduction, and linguistic expression.
 It does not measure independent physical angle recovery from RGB images.

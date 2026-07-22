@@ -4,7 +4,7 @@
 We construct \textbf{YogaAlign}, a geometry-grounded vision--language benchmark that extends Yoga-82 with reconstructed 3D body structure, interpretable geometric measurements, and instruction-style question--answer (QA) annotations.
 The benchmark supports reasoning beyond pose recognition, including joint-angle interpretation, bilateral comparison, regional alignment analysis, and pose-specific instructional knowledge.
 At a high level, we construct it in three stages as follows.
-We reconstruct a 3D body from each image, then extract structured geometric descriptors, and finally generate two complementary QA sets grounded in either pose-level textual knowledge or image-specific geometry.
+We reconstruct a 3D body from each image, then extract structured geometric descriptors, and finally generate two QA sets grounded in either pose-level textual knowledge or image-specific geometry.
 
 \subsection{Source Images and 3D Body Reconstruction}
 \label{subsec:source_reconstruction}
@@ -13,7 +13,7 @@ We reconstruct a 3D body from each image, then extract structured geometric desc
 YogaAlign is built on Yoga-82~\cite{verma2020yoga82}, which contains 28,478 images spanning 82 fine-grained yoga-pose categories.
 The images were collected from online sources and exhibit substantial variation in viewpoint, background, illumination, clothing, practitioner appearance, and execution style.
 Yoga-82 is therefore a challenging substrate for geometry-aware reasoning.
-Many poses differ through subtle changes in limb articulation, trunk orientation, balance, or bilateral symmetry.
+Many poses differ through small changes in limb articulation, trunk orientation, balance, or bilateral symmetry.
 The original dataset, however, provides only RGB images and category labels.
 It does not include 3D body structure, geometric measurements, or language annotations.
 
@@ -157,7 +157,7 @@ We exclude navigation text, advertisements, author biographies, publication meta
 \noindent\textbf{Evidence structuring.}
 Each pose document is divided into 5,000-character chunks with a 500-character overlap.
 We do not generate QA pairs directly from the noisy source text.
-An LLM-based extractor first converts each chunk $c_i$ into two complementary evidence representations:
+An LLM-based extractor first converts each chunk $c_i$ into two evidence representations:
 \begin{equation}
 (R_i,B_i)=E_{\phi}(c_i,p),
 \label{eq:domain_extraction}
@@ -241,7 +241,8 @@ For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to an ato
 f_m=(r_m,b_m,n_m,v_m,s_m),
 \label{eq:metric_fact}
 \end{equation}
-where $r_m$ and $b_m$ denote the body region and part, $n_m$ identifies the descriptor, $v_m$ is its angular value, and $s_m$ is its discretized interpretation state.
+where $r_m$, $b_m$, and $n_m$ identify the body region, body part, and descriptor.
+The entries $v_m$ and $s_m$ store the angular value and its discretized interpretation state.
 We organize these facts into a graph $\mathcal{G}_I=(\mathcal{V}_I,\mathcal{E}_I)$ containing image, pose, region, body-part, metric, and interpretation nodes.
 Edges encode relations such as image--pose, region--body-part, body-part--metric, and metric--interpretation.
 The graph makes the available evidence explicit and supports controlled sampling of different reasoning structures.
@@ -277,7 +278,8 @@ Instructor observation & A salient metric and severity state & Express a teacher
 
 For knee and elbow comparisons, the smaller interior angle denotes the more flexed side.
 For hip opening and shoulder elevation, the larger value denotes the more open or elevated side.
-These deterministic comparison rules prevent the language model from inventing the relation between two numeric values.
+These deterministic rules keep the stated comparison direction consistent with the recorded values.
+They do not validate the values themselves and inherit any left--right ambiguity in the underlying reconstruction.
 
 \noindent\textbf{Memory-aware sampling and synthesis.}
 We select 3,000 images using balanced-proportional sampling and generate two QA records per image.
@@ -294,7 +296,8 @@ For a selected path $p_k$, the generator receives its evidence $E(p_k)$ and rece
 \end{equation}
 The prompt requires the pose name in the question and every selected angular value in the answer.
 It prohibits internal identifiers and unsupported spatial or biomechanical claims.
-The model therefore verbalizes a predefined evidence path rather than inferring unrestricted yoga knowledge.
+The model therefore verbalizes a predefined evidence path.
+It does not infer unrestricted yoga knowledge.
 
 \noindent\textbf{Validation and numeric targets.}
 We check each candidate QA pair against rule-based criteria for pose-name presence, required numeric values, anatomical laterality, prohibited internal terms, path-specific constraints, and near-duplicate questions.
@@ -340,6 +343,6 @@ Quality control & Rule validation and deterministic templates \\
 
 The final YogaAlign corpus contains 4,090 pose-level domain-knowledge examples and 6,000 image-specific geometry-grounded examples, 10,090 QA records in total.
 The geometry set comprises 3,000 direct-angle, 905 comparison, 900 regional-summary, 600 misconception, and 595 instructor-observation records.
-Together, the two sets provide complementary supervision.
+The two sets provide distinct supervision.
 The domain set captures what is generally known about an asana, whereas the geometry set describes the measured configuration of a particular reconstructed body.
 This distinction is retained throughout training and evaluation so that pose-level knowledge is not conflated with image-specific geometric evidence.

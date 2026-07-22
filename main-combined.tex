@@ -34,11 +34,11 @@ State University of New York (SUNY), Binghamton, NY, USA
 A body posture is arbitrarily linked to its cultural or social meaning.
 Vision--language models fall short in inferring meaning from appearance when subtle physical differences carry substantially different meanings.
 This failure can endorse harmful form in physical therapy or exercise and misrepresent postures whose meaning matters to the communities that practice them.
-We address this limitation by pairing images with explicit, measured body geometry and conditioning a vision--language model on that geometry to capture meaning changes hidden in subtle visual differences.
+We address this limitation by pairing images with explicit, measured body geometry and conditioning a vision--language model on that geometry to capture meaning changes hidden in small visual differences.
 Using yoga as a challenging domain, we introduce \textbf{YogaAlign}, a benchmark that extends Yoga-82 with explicit, measured body geometry paired with question--answer annotations.
 Building on YogaAlign, we train \textbf{YogaLLaVA V3}, a vision--language model that conditions on body geometry through new learnable tokens encoding the measurements of the geometric structure.
 Instead of guessing or rounding, YogaLLaVA V3 expresses precise numeric measurements in generated language by leaving a placeholder token at each numeric position and replacing it with a continuous value from an additional regression head.
-YogaLLaVA V3 produces the correct number of numeric measurements in 86.1\% of evaluation samples, a 26\% relative gain over the best baseline, Qwen2.5-VL-7B (68.1\%).
+YogaLLaVA V3 produces the correct number of numeric measurements in 86.1\% of evaluation samples, a 26\% relative gain over the best image-only baseline, Qwen2.5-VL-7B (68.1\%).
 On the shared common-success subset, it achieves a mean absolute error of $17.65^\circ$, a 59\% reduction relative to the best baseline, LLaVA-1.5-7B ($42.80^\circ$).
 More broadly, our results show that making body geometry explicit, instead of leaving it implicit, helps models learn the arbitrary link between appearance and its cultural or social meaning.
 \end{abstract}
@@ -63,7 +63,7 @@ These tasks provide perceptual representations but do not answer natural-languag
 Such questions require a model to connect image evidence with explicit body measurements and linguistic reasoning.
 
 Yoga is a particularly demanding setting for this problem.
-Many asanas are distinguished by subtle differences in joint flexion, limb elevation, trunk orientation, and bilateral symmetry.
+Many asanas are distinguished by small differences in joint flexion, limb elevation, trunk orientation, and bilateral symmetry.
 Yoga-82~\cite{verma2020yoga82} provides a large and visually diverse benchmark for fine-grained recognition across 82 pose categories.
 Its supervision is limited to hierarchical category labels.
 It does not provide reconstructed 3D bodies, interpretable geometric descriptors, or question--answer annotations that connect a specific image to its measured configuration.
@@ -77,7 +77,7 @@ Second, continuous geometric values must be integrated into language generation 
 
 We introduce \textbf{YogaAlign}, a benchmark that pairs Yoga-82 images with explicit, measured body geometry and question--answer annotations grounded in that geometry.
 The geometry comes from SAM 3D Body reconstructions, summarized into a structured taxonomy of angular, symmetry, trunk, and support descriptors.
-The annotations form two complementary sets.
+The annotations form two sets.
 We produce pose-level domain-knowledge QA by evidence-conditioned synthesis from textual sources.
 We generate geometry-grounded QA directly from the measurements of each image.
 
@@ -90,7 +90,7 @@ We make three contributions.
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
     \item We introduce \textbf{YogaAlign}, a geometry-grounded extension of Yoga-82 containing structured 3D-derived descriptors and 10,090 instruction-style question--answer pairs across 82 asanas.
     \item We develop a two-part annotation procedure that combines evidence-conditioned yoga-domain knowledge with image-specific geometric measurements, exact angular targets, rule-based validation, and traceable provenance.
-    \item We build \textbf{YogaLLaVA V3} on YogaAlign, integrating metric-aware geometry tokens, continuous angle-slot regression, and scalar feedback into a vision--language decoder, and evaluate both teacher-forced angle regression and free-running generation.
+    \item We build \textbf{YogaLLaVA V3} on YogaAlign, integrating metric-aware geometry tokens, continuous angle-slot regression over descriptors supplied through those tokens, and scalar feedback into a vision--language decoder, and evaluate both teacher-forced angle regression and free-running generation.
 \end{itemize}
 \section{Related Work}
 \label{sec:related}
@@ -131,7 +131,7 @@ YogaAlign builds on that diversity and supplies the missing pairing of reconstru
 We construct \textbf{YogaAlign}, a geometry-grounded vision--language benchmark that extends Yoga-82 with reconstructed 3D body structure, interpretable geometric measurements, and instruction-style question--answer (QA) annotations.
 The benchmark supports reasoning beyond pose recognition, including joint-angle interpretation, bilateral comparison, regional alignment analysis, and pose-specific instructional knowledge.
 At a high level, we construct it in three stages as follows.
-We reconstruct a 3D body from each image, then extract structured geometric descriptors, and finally generate two complementary QA sets grounded in either pose-level textual knowledge or image-specific geometry.
+We reconstruct a 3D body from each image, then extract structured geometric descriptors, and finally generate two QA sets grounded in either pose-level textual knowledge or image-specific geometry.
 
 \subsection{Source Images and 3D Body Reconstruction}
 \label{subsec:source_reconstruction}
@@ -140,7 +140,7 @@ We reconstruct a 3D body from each image, then extract structured geometric desc
 YogaAlign is built on Yoga-82~\cite{verma2020yoga82}, which contains 28,478 images spanning 82 fine-grained yoga-pose categories.
 The images were collected from online sources and exhibit substantial variation in viewpoint, background, illumination, clothing, practitioner appearance, and execution style.
 Yoga-82 is therefore a challenging substrate for geometry-aware reasoning.
-Many poses differ through subtle changes in limb articulation, trunk orientation, balance, or bilateral symmetry.
+Many poses differ through small changes in limb articulation, trunk orientation, balance, or bilateral symmetry.
 The original dataset, however, provides only RGB images and category labels.
 It does not include 3D body structure, geometric measurements, or language annotations.
 
@@ -284,7 +284,7 @@ We exclude navigation text, advertisements, author biographies, publication meta
 \noindent\textbf{Evidence structuring.}
 Each pose document is divided into 5,000-character chunks with a 500-character overlap.
 We do not generate QA pairs directly from the noisy source text.
-An LLM-based extractor first converts each chunk $c_i$ into two complementary evidence representations:
+An LLM-based extractor first converts each chunk $c_i$ into two evidence representations:
 \begin{equation}
 (R_i,B_i)=E_{\phi}(c_i,p),
 \label{eq:domain_extraction}
@@ -368,7 +368,8 @@ For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to an ato
 f_m=(r_m,b_m,n_m,v_m,s_m),
 \label{eq:metric_fact}
 \end{equation}
-where $r_m$ and $b_m$ denote the body region and part, $n_m$ identifies the descriptor, $v_m$ is its angular value, and $s_m$ is its discretized interpretation state.
+where $r_m$, $b_m$, and $n_m$ identify the body region, body part, and descriptor.
+The entries $v_m$ and $s_m$ store the angular value and its discretized interpretation state.
 We organize these facts into a graph $\mathcal{G}_I=(\mathcal{V}_I,\mathcal{E}_I)$ containing image, pose, region, body-part, metric, and interpretation nodes.
 Edges encode relations such as image--pose, region--body-part, body-part--metric, and metric--interpretation.
 The graph makes the available evidence explicit and supports controlled sampling of different reasoning structures.
@@ -404,7 +405,8 @@ Instructor observation & A salient metric and severity state & Express a teacher
 
 For knee and elbow comparisons, the smaller interior angle denotes the more flexed side.
 For hip opening and shoulder elevation, the larger value denotes the more open or elevated side.
-These deterministic comparison rules prevent the language model from inventing the relation between two numeric values.
+These deterministic rules keep the stated comparison direction consistent with the recorded values.
+They do not validate the values themselves and inherit any left--right ambiguity in the underlying reconstruction.
 
 \noindent\textbf{Memory-aware sampling and synthesis.}
 We select 3,000 images using balanced-proportional sampling and generate two QA records per image.
@@ -421,7 +423,8 @@ For a selected path $p_k$, the generator receives its evidence $E(p_k)$ and rece
 \end{equation}
 The prompt requires the pose name in the question and every selected angular value in the answer.
 It prohibits internal identifiers and unsupported spatial or biomechanical claims.
-The model therefore verbalizes a predefined evidence path rather than inferring unrestricted yoga knowledge.
+The model therefore verbalizes a predefined evidence path.
+It does not infer unrestricted yoga knowledge.
 
 \noindent\textbf{Validation and numeric targets.}
 We check each candidate QA pair against rule-based criteria for pose-name presence, required numeric values, anatomical laterality, prohibited internal terms, path-specific constraints, and near-duplicate questions.
@@ -467,7 +470,7 @@ Quality control & Rule validation and deterministic templates \\
 
 The final YogaAlign corpus contains 4,090 pose-level domain-knowledge examples and 6,000 image-specific geometry-grounded examples, 10,090 QA records in total.
 The geometry set comprises 3,000 direct-angle, 905 comparison, 900 regional-summary, 600 misconception, and 595 instructor-observation records.
-Together, the two sets provide complementary supervision.
+The two sets provide distinct supervision.
 The domain set captures what is generally known about an asana, whereas the geometry set describes the measured configuration of a particular reconstructed body.
 This distinction is retained throughout training and evaluation so that pose-level knowledge is not conflated with image-specific geometric evidence.
 \section{Method}
@@ -783,7 +786,8 @@ The questions specify the target metrics and their expected order but do not rev
 We report (i) slot-count accuracy over the complete test set and (ii) numeric error on the common-success subset for which all models generate the correct number of values.
 This distinction avoids comparing numeric errors computed on different model-specific subsets.
 
-All numeric references are pseudo-measurements derived from SAM 3D Body, not motion capture or manually verified biomechanical annotations.
+All numeric references are pseudo-measurements derived from SAM 3D Body.
+They are not motion capture or manually verified biomechanical annotations.
 Moreover, 518 of the 521 teacher-forced test targets are present in the structured geometry input.
 The primary evaluation therefore measures question-conditioned descriptor selection, slot filling, reproduction, and linguistic expression.
 It does not measure independent physical angle recovery from RGB images.
@@ -795,6 +799,7 @@ It does not measure independent physical angle recovery from RGB images.
 
 Table~\ref{tab:overall_results} summarizes teacher-forced regression over 521 angle slots from 310 held-out geometry-grounded records.
 YogaLLaVA V3 obtains an MAE of $13.98^\circ$ and an RMSE of $21.82^\circ$, with a Pearson correlation of 0.913.
+The test $R^2$ is 0.832 and differs from the validation $R^2$ of 0.874 used for checkpoint selection (Sec.~\ref{sec:implementation_details}).
 In addition, 57.01\% and 70.63\% of predictions fall within $10^\circ$ and $15^\circ$, respectively, of the reconstruction-derived references.
 These results indicate that the model can identify and express the requested measurement from the supplied geometry under a known answer structure.
 
@@ -859,6 +864,8 @@ Identifying their individual effects requires further controlled analysis.
 The symmetry categories contain only three or four slots and should not be used to draw broad conclusions.
 Hip symmetry is additionally distinct because no dedicated hip-symmetry token is included in the 14-descriptor input vocabulary.
 Its three test targets therefore cannot be retrieved from a corresponding independent input token.
+Despite the missing token, hip symmetry attains an MAE of $7.82^\circ$, lower than several descriptors with dedicated input tokens and far larger test support.
+Under a retrieval-based reading of the regression, this direction is counterintuitive, and we note it as an open question given the three-slot sample.
 
 \begin{table}[t]
     \centering
@@ -896,6 +903,12 @@ Table~\ref{tab:generation_results} evaluates complete free-running generation.
 YogaLLaVA V3 emits the correct number of numeric values for 267 of 310 records (86.1\%), compared with 66.1\% for LLaVA-1.5-7B and 68.1\% for Qwen2.5-VL-7B.
 The proposed model is therefore more reliable at determining when and how many continuous outputs are required.
 
+This comparison evaluates complete models.
+It does not isolate a single architectural factor.
+YogaLLaVA V3 receives structured geometry and task-specific instruction tuning, whereas the baselines are image-only and zero-shot.
+The observed advantage therefore reflects the combined effect of geometry conditioning, domain adaptation, and continuous angle regression.
+It should not be read as a modality-matched ablation.
+
 For numeric comparison, we use the 160-record common-success subset on which all three models produce the correct slot count.
 YogaLLaVA V3 achieves a slot-level MAE of $17.65^\circ$, compared with $42.80^\circ$ for LLaVA and $46.91^\circ$ for Qwen.
 Its record-level macro MAE is $16.98^\circ$ with a 95\% bootstrap confidence interval of $[14.15,20.17]^\circ$.
@@ -921,11 +934,6 @@ Paired bootstrap differences relative to YogaLLaVA are $24.85^\circ$ ($[19.45,30
     \end{tabular}}
 \end{table}
 
-This comparison evaluates complete models rather than isolating a single architectural factor.
-YogaLLaVA V3 receives structured geometry and task-specific instruction tuning, whereas the baselines are image-only and zero-shot.
-The observed advantage therefore reflects the combined effect of geometry conditioning, domain adaptation, and continuous angle regression.
-It should not be read as a modality-matched ablation.
-
 \subsection{Discussion and Limitations}
 \label{sec:result_interpretation}
 
@@ -933,7 +941,7 @@ The teacher-forced and autoregressive evaluations characterize complementary cap
 The former measures continuous prediction at known answer slots, whereas the latter additionally requires the model to decide whether a numeric slot is needed, emit and order the correct number of slots, preserve consistency between numbers and language, and terminate appropriately.
 Reporting them separately avoids conflating regression accuracy with complete generation quality.
 
-The current evidence supports geometry-conditioned measurement selection and expression, but not independent image-only recovery of physical joint angles.
+The current evidence supports geometry-conditioned measurement selection and expression.
 The references inherit uncertainty from monocular reconstruction, including viewpoint, occlusion, foreshortening, clothing, inversion, depth, and left--right ambiguities.
 The references should therefore not be interpreted as clinical, diagnostic, rehabilitation, motion-capture, or manually verified biomechanical ground truth.
 Finally, the experiments do not isolate modality contributions through ablation and do not test generalization to unseen yoga-pose categories.

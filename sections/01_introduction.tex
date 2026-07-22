@@ -15,7 +15,7 @@ These tasks provide perceptual representations but do not answer natural-languag
 Such questions require a model to connect image evidence with explicit body measurements and linguistic reasoning.
 
 Yoga is a particularly demanding setting for this problem.
-Many asanas are distinguished by subtle differences in joint flexion, limb elevation, trunk orientation, and bilateral symmetry.
+Many asanas are distinguished by small differences in joint flexion, limb elevation, trunk orientation, and bilateral symmetry.
 Yoga-82~\cite{verma2020yoga82} provides a large and visually diverse benchmark for fine-grained recognition across 82 pose categories.
 Its supervision is limited to hierarchical category labels.
 It does not provide reconstructed 3D bodies, interpretable geometric descriptors, or question--answer annotations that connect a specific image to its measured configuration.
@@ -29,7 +29,7 @@ Second, continuous geometric values must be integrated into language generation 
 
 We introduce \textbf{YogaAlign}, a benchmark that pairs Yoga-82 images with explicit, measured body geometry and question--answer annotations grounded in that geometry.
 The geometry comes from SAM 3D Body reconstructions, summarized into a structured taxonomy of angular, symmetry, trunk, and support descriptors.
-The annotations form two complementary sets.
+The annotations form two sets.
 We produce pose-level domain-knowledge QA by evidence-conditioned synthesis from textual sources.
 We generate geometry-grounded QA directly from the measurements of each image.
 
@@ -42,5 +42,5 @@ We make three contributions.
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
     \item We introduce \textbf{YogaAlign}, a geometry-grounded extension of Yoga-82 containing structured 3D-derived descriptors and 10,090 instruction-style question--answer pairs across 82 asanas.
     \item We develop a two-part annotation procedure that combines evidence-conditioned yoga-domain knowledge with image-specific geometric measurements, exact angular targets, rule-based validation, and traceable provenance.
-    \item We build \textbf{YogaLLaVA V3} on YogaAlign, integrating metric-aware geometry tokens, continuous angle-slot regression, and scalar feedback into a vision--language decoder, and evaluate both teacher-forced angle regression and free-running generation.
+    \item We build \textbf{YogaLLaVA V3} on YogaAlign, integrating metric-aware geometry tokens, continuous angle-slot regression over descriptors supplied through those tokens, and scalar feedback into a vision--language decoder, and evaluate both teacher-forced angle regression and free-running generation.
 \end{itemize}
