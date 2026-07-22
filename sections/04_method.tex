@@ -5,7 +5,7 @@
 \label{sec:method_overview}
 
 We propose \textbf{YogaLLaVA V3}, a geometry-conditioned vision--language model for fine-grained yoga-pose understanding.
-Given an RGB image $I$, a natural-language question $q$, and an ordered set of structured body measurements $\mathcal{G}$, the model generates an answer $y$ containing qualitative explanations and, when required, continuous angular values.
+Given an RGB image $I$, a natural-language question $q$, and an ordered set of body measurements $\mathcal{G}$, the model generates an answer $y$ containing qualitative explanations and, when required, continuous angular values.
 We formulate this task as conditional generation:
 \begin{equation}
     p_{\Theta}(y\mid I,q,\mathcal{G}),
@@ -15,11 +15,11 @@ where $\Theta$ denotes the trainable model parameters.
 
 As illustrated in Fig.~\ref{fig:yogallava_architecture}, YogaLLaVA V3 extends LLaVA-1.5-7B with two components for continuous geometric reasoning.
 First, a geometry encoder converts ordered scalar body measurements into tokens in the language-model embedding space.
-Second, an angle-regression head predicts a continuous value whenever the decoder produces a dedicated \texttt{<ANGLE>} token.
+Second, an angle-regression head predicts a continuous value whenever the decoder produces an \texttt{<ANGLE>} token.
 The predicted scalar is subsequently embedded back into the sequence, so that later words and angle slots condition on previously generated measurements.
 The design preserves standard autoregressive language generation and does not represent angles solely as sequences of discrete text tokens.
 
-The structured measurements are obtained from the SAM 3D Body reconstruction and metric extraction described in Sec.~\ref{sec:dataset}.
+The measurements are obtained from the SAM 3D Body reconstruction and metric extraction described in Sec.~\ref{sec:dataset}.
 Accordingly, YogaLLaVA V3 reasons jointly over visual evidence, language, and supplied geometry.
 It does not independently reconstruct the complete geometry vector from RGB pixels.
 
@@ -64,9 +64,9 @@ The image is processed by the pretrained CLIP ViT-L/14-336 vision encoder in LLa
 Its patch-level features are projected into the language-model hidden space through the frozen multimodal projector.
 The instruction and question are tokenized using the LLaVA tokenizer and combined with the projected visual features in the standard LLaVA input sequence.
 
-To supply structured geometry, we append exactly $K$ special \texttt{<GEO>} placeholders in a fixed canonical order.
+To supply the geometry, we append exactly $K$ special \texttt{<GEO>} placeholders in a fixed canonical order.
 Before decoding, the ordinary embeddings of these placeholders are replaced by geometry representations with the same dimensionality as the language-model hidden states.
-Consequently, visual features, text tokens, and structured measurements are processed within a shared autoregressive sequence.
+Consequently, visual features, text tokens, and measurements are processed within a shared autoregressive sequence.
 
 \noindent\textbf{Fourier encoding of continuous measurements.}
 For every available descriptor, we normalize its value to $[0,1]$:
@@ -110,14 +110,14 @@ The final token for descriptor $k$ is
     \label{eq:geometry_token}
 \end{equation}
 where $\mathbf{e}^{\mathrm{miss}}\in\mathbb{R}^{d}$ is a learned missing-value embedding and $\operatorname{LN}$ denotes layer normalization.
-The ordered geometry sequence is therefore
+The ordered geometry sequence is
 \begin{equation}
     \mathbf{G}=[\mathbf{g}_1,\ldots,\mathbf{g}_K]
     \in\mathbb{R}^{K\times d}.
     \label{eq:geometry_sequence}
 \end{equation}
 These vectors replace the corresponding \texttt{<GEO>} embeddings.
-The decoder therefore attends jointly to the image, question, and metric-specific continuous geometry.
+The decoder attends jointly to the image, question, and metric-specific continuous geometry.
 
 \subsection{Angle-Aware Language Generation}
 \label{sec:angle_generation}
@@ -229,5 +229,5 @@ Ordinary tokens follow the standard LLaVA generation process.
 When \texttt{<ANGLE>} is selected, the hidden state that produced it is passed to the regression head to obtain $\widehat{v}_j$.
 The prediction is converted to degrees for the final response and encoded through Eq.~\eqref{eq:angle_feedback} as the embedding of that \texttt{<ANGLE>} token before decoding resumes.
 After generation, the placeholders are replaced in order by their predicted degree values.
-Token probabilities and scalar predictions are therefore not averaged or combined at the output level.
+Token probabilities and scalar predictions are not averaged or combined at the output level.
 The two interact through the slot-placement and continuous-value feedback mechanism.

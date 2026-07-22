@@ -1,10 +1,10 @@
 \section{YogaAlign Dataset}
 \label{sec:dataset}
 
-We construct \textbf{YogaAlign}, a geometry-grounded vision--language benchmark that extends Yoga-82 with reconstructed 3D body structure, interpretable geometric measurements, and instruction-style question--answer (QA) annotations.
+We construct \textbf{YogaAlign}, a geometry-grounded vision--language benchmark that extends Yoga-82 with reconstructed 3D body structure, geometric measurements, and instruction-style question--answer (QA) annotations.
 The benchmark supports reasoning beyond pose recognition, including joint-angle interpretation, bilateral comparison, regional alignment analysis, and pose-specific instructional knowledge.
 At a high level, we construct it in three stages as follows.
-We reconstruct a 3D body from each image, then extract structured geometric descriptors, and finally generate two QA sets grounded in either pose-level textual knowledge or image-specific geometry.
+We reconstruct a 3D body from each image, then extract geometric descriptors, and finally generate two QA sets grounded in either pose-level textual knowledge or image-specific geometry.
 
 \subsection{Source Images and 3D Body Reconstruction}
 \label{subsec:source_reconstruction}
@@ -106,7 +106,7 @@ Bilateral descriptors quantify differences between corresponding left and right 
 Scale-dependent quantities (stance width, shoulder-height offset, and hip-height offset) are normalized by the vertical extent of the reconstructed mesh to reduce sensitivity to body and reconstruction scale.
 
 \noindent\textbf{Structured metric records.}
-Each image is paired with a structured record containing the descriptor name, anatomical region, numeric value, unit, definition, and discretized interpretation state.
+Each image is paired with a record containing the descriptor name, anatomical region, numeric value, unit, definition, and discretized interpretation state.
 Fixed thresholds map continuous measurements to language-compatible states such as \emph{nearly straight}, \emph{deeply bent}, \emph{upright}, \emph{rotated}, or \emph{asymmetric}.
 The states keep the wording consistent, and the underlying numeric values preserve exact supervision.
 We use the measurements only as reconstruction-derived alignment indicators for dataset construction.
@@ -165,8 +165,9 @@ An LLM-based extractor first converts each chunk $c_i$ into two evidence represe
 where $p$ denotes the pose, $R_i$ is a set of compact relational facts, and $B_i$ is a set of structured knowledge units.
 Relational facts encode single subject--relation--object statements suited to concise factual questions.
 Knowledge units retain multi-step or explanatory content suited to procedural, alignment, safety, modification, breathing, sequencing, and correction questions.
-Extraction is restricted to statements explicitly supported by the current source chunk.
-Unsupported claims that a pose cures or treats a medical condition are not retained as factual supervision.
+We instruct the extractor to restrict its output to statements supported by the current source chunk and to drop claims that a pose cures or treats a medical condition.
+Both restrictions are carried by the extraction prompt alone.
+No independent check enforces them, and we have not audited the retained records for unsupported medical claims.
 
 \begin{table*}[t]
 \centering
@@ -203,7 +204,7 @@ We instruct the generator to use only the supplied evidence.
 Compact signatures of previously extracted facts, knowledge units, and questions are maintained across chunks to suppress semantic repetition.
 Question families are varied across factual, procedural, scenario-based, safety, reverse-lookup, correction, and teacher-cue formulations.
 Each accepted item stores the pose, source-chunk identifier, question, answer, QA type, supporting facts, supporting knowledge units, and an evidence phrase.
-Every answer therefore remains traceable to its source evidence.
+Every answer remains traceable to its source evidence.
 
 \begin{table}[t]
 \centering
@@ -232,7 +233,7 @@ Context length & 32,768 tokens \\
 \label{subsubsec:geometry_qa_generation}
 
 The second set is generated directly from the measurements associated with an individual image.
-We restrict this set to degree-valued descriptors, which provide interpretable continuous targets.
+We restrict this set to degree-valued descriptors, which provide continuous targets.
 Non-angular normalized quantities, including stance width, body-center offset, and shoulder- and hip-height differences, remain part of the geometric annotation taxonomy but are not used for geometry-QA generation or angle-regression supervision.
 
 \noindent\textbf{Metric facts and geometry graphs.}

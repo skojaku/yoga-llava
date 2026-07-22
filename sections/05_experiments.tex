@@ -40,7 +40,7 @@ YogaLLaVA V3 is initialized from LLaVA-1.5-7B.
 Its CLIP ViT-L/14-336 image encoder operates at $336\!\times\!336$ resolution, and the multimodal projector maps the visual features to the 4,096-dimensional language space.
 The maximum sequence length is 1,280 tokens.
 Both the vision encoder and multimodal projector remain frozen.
-The language decoder is adapted using the LoRA settings described in Sec.~\ref{sec:training_objective}, together with the proposed geometry and angle components.
+The language decoder is adapted using the LoRA settings described in Sec.~\ref{sec:training_objective}, together with the geometry and angle components.
 
 We train for 12 epochs using AdamW with weight decay 0.01 and gradient clipping at 1.0.
 A per-device batch size of four and eight-step gradient accumulation produce an effective batch size of 32.
@@ -72,11 +72,11 @@ Teacher forcing isolates continuous prediction given the correct linguistic slot
 It does not evaluate whether the model can produce, order, and correctly place the required slots on its own.
 
 \noindent\textbf{Autoregressive generation.}
-We therefore additionally evaluate free-running generation on all 310 geometry-grounded test records.
-YogaLLaVA V3 receives the image, question, and structured geometry.
+We also evaluate free-running generation on all 310 geometry-grounded test records.
+YogaLLaVA V3 receives the image, question, and geometry input.
 LLaVA-1.5-7B and Qwen2.5-VL-7B-Instruct~\cite{bai2025qwen25vl} are evaluated zero-shot using only the image and question.
 The questions specify the target metrics and their expected order but do not reveal numeric values.
-We report (i) slot-count accuracy over the complete test set and (ii) numeric error on the common-success subset for which all models generate the correct number of values.
+We report (i) slot-count accuracy over the full test set and (ii) numeric error on the common-success subset for which all models generate the correct number of values.
 This distinction avoids comparing numeric errors computed on different model-specific subsets.
 
 All numeric references are pseudo-measurements derived from SAM 3D Body.
