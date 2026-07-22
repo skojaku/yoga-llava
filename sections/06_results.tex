@@ -73,7 +73,7 @@ Identifying their individual effects requires further controlled analysis.
 The symmetry categories contain only three or four slots and should not be used to draw broad conclusions.
 Hip symmetry is additionally distinct because no dedicated hip-symmetry token is included in the 14-descriptor input vocabulary.
 Its three test targets therefore cannot be retrieved from a corresponding independent input token.
-Despite the missing token, hip symmetry attains an MAE of $7.82^\circ$, lower than several descriptors with dedicated input tokens and far larger test support.
+Despite the missing token, hip symmetry reaches an MAE of $7.82^\circ$, lower than several descriptors with dedicated input tokens and far larger test support.
 Under a retrieval-based reading of the regression, this direction is counterintuitive, and we note it as an open question given the three-slot sample.
 
 \begin{table}[t]
@@ -109,7 +109,7 @@ Under a retrieval-based reading of the regression, this direction is counterintu
 \label{sec:generation_comparison}
 
 Table~\ref{tab:generation_results} evaluates complete free-running generation.
-YogaLLaVA V3 emits the correct number of numeric values for 267 of 310 records (86.1\%), compared with 66.1\% for LLaVA-1.5-7B and 68.1\% for Qwen2.5-VL-7B.
+YogaLLaVA V3 produces the correct number of numeric values for 267 of 310 records (86.1\%), compared with 66.1\% for LLaVA-1.5-7B and 68.1\% for Qwen2.5-VL-7B.
 The Wilson 95\% confidence interval for YogaLLaVA V3 is $[81.8,89.5]\%$ and overlaps neither baseline interval ($[60.7,71.2]\%$ for LLaVA-1.5-7B and $[62.7,73.0]\%$ for Qwen2.5-VL-7B).
 The proposed model is therefore more reliable at determining when and how many continuous outputs are required.
 
@@ -120,7 +120,7 @@ The observed advantage therefore reflects the combined effect of geometry condit
 It should not be read as a modality-matched ablation.
 
 For numeric comparison, we use the 160-record common-success subset on which all three models produce the correct slot count.
-Conditioning on joint success removes every record where a baseline failed to emit a valid slot count.
+Conditioning on joint success removes every record where a baseline produced an invalid slot count.
 Because such records are plausibly the harder ones, the numeric gaps below hold conditional on this selection.
 YogaLLaVA V3 achieves a slot-level MAE of $17.65^\circ$, compared with $42.80^\circ$ for LLaVA and $46.91^\circ$ for Qwen.
 Its record-level macro MAE is $16.98^\circ$ with a 95\% bootstrap confidence interval of $[14.15,20.17]^\circ$.
@@ -151,7 +151,7 @@ Paired bootstrap differences relative to YogaLLaVA are $24.85^\circ$ ($[19.45,30
 \label{sec:result_interpretation}
 
 The teacher-forced and autoregressive evaluations characterize complementary capabilities.
-The former measures continuous prediction at known answer slots, whereas the latter additionally requires the model to decide whether a numeric slot is needed, emit and order the correct number of slots, preserve consistency between numbers and language, and terminate appropriately.
+The former measures continuous prediction at known answer slots, whereas the latter additionally requires the model to decide whether a numeric slot is needed, produce and order the correct number of slots, preserve consistency between numbers and language, and terminate appropriately.
 Reporting them separately avoids conflating regression accuracy with complete generation quality.
 
 The current evidence supports geometry-conditioned measurement selection and expression.

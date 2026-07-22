@@ -12,7 +12,7 @@ We reconstruct a 3D body from each image, then extract structured geometric desc
 \noindent\textbf{Yoga-82 source dataset.}
 YogaAlign is built on Yoga-82~\cite{verma2020yoga82}, which contains 28,478 images spanning 82 fine-grained yoga-pose categories.
 The images were collected from online sources and exhibit substantial variation in viewpoint, background, illumination, clothing, practitioner appearance, and execution style.
-Yoga-82 is therefore a challenging substrate for geometry-aware reasoning.
+Yoga-82 is therefore a challenging setting for geometry-aware reasoning.
 Many poses differ through small changes in limb articulation, trunk orientation, balance, or bilateral symmetry.
 The original dataset, however, provides only RGB images and category labels.
 It does not include 3D body structure, geometric measurements, or language annotations.
@@ -39,7 +39,7 @@ Their accuracy may be affected by self-occlusion, foreshortening, loose clothing
 \label{subsec:geometric_measurements}
 
 Dense meshes are expressive but too high-dimensional for language-grounded pose analysis.
-We therefore distill each reconstruction into a compact set of anatomically interpretable descriptors (Table~\ref{tab:geometric_metrics}).
+We therefore reduce each reconstruction to a compact set of anatomically interpretable descriptors (Table~\ref{tab:geometric_metrics}).
 We map the raw coordinates to a canonical frame before measurement.
 Centering the vertices and keypoints at the mesh centroid removes global translation, and a fixed 3D coordinate convention supplies a consistent vertical axis.
 
@@ -108,7 +108,7 @@ Scale-dependent quantities (stance width, shoulder-height offset, and hip-height
 \noindent\textbf{Structured metric records.}
 Each image is paired with a structured record containing the descriptor name, anatomical region, numeric value, unit, definition, and discretized interpretation state.
 Fixed thresholds map continuous measurements to language-compatible states such as \emph{nearly straight}, \emph{deeply bent}, \emph{upright}, \emph{rotated}, or \emph{asymmetric}.
-These states facilitate controlled verbalization while the underlying numeric values preserve exact supervision.
+The states keep the wording consistent, and the underlying numeric values preserve exact supervision.
 We use the measurements only as reconstruction-derived alignment indicators for dataset construction.
 The measurements are not intended as clinical, diagnostic, or rehabilitation measurements.
 
@@ -117,7 +117,7 @@ The measurements are not intended as clinical, diagnostic, or rehabilitation mea
 
 YogaAlign contains two complementary QA sets.
 The \emph{domain-knowledge} set captures pose-level semantic and instructional information that cannot be inferred reliably from body geometry alone.
-The \emph{geometry-grounded} set verbalizes image-specific angular evidence extracted from the reconstructed body.
+The \emph{geometry-grounded} set expresses image-specific angular evidence extracted from the reconstructed body.
 Table~\ref{tab:qa_annotation_overview} contrasts their evidence sources and supervision targets.
 
 \begin{table*}[t]
@@ -163,7 +163,7 @@ An LLM-based extractor first converts each chunk $c_i$ into two evidence represe
 \label{eq:domain_extraction}
 \end{equation}
 where $p$ denotes the pose, $R_i$ is a set of compact relational facts, and $B_i$ is a set of structured knowledge units.
-Relational facts encode atomic subject--relation--object statements suited to concise factual questions.
+Relational facts encode single subject--relation--object statements suited to concise factual questions.
 Knowledge units retain multi-step or explanatory content suited to procedural, alignment, safety, modification, breathing, sequencing, and correction questions.
 Extraction is restricted to statements explicitly supported by the current source chunk.
 Unsupported claims that a pose cures or treats a medical condition are not retained as factual supervision.
@@ -180,7 +180,7 @@ Unsupported claims that a pose cures or treats a medical condition are not retai
 \textbf{Representation} & \textbf{Role} & \textbf{Typical content} & \textbf{Supported QA form} \\
 \midrule
 Relational facts &
-Atomic, evidence-backed statements &
+Single-fact, evidence-backed statements &
 Names, difficulty, benefits, contraindications, precautions, props, muscles,
 modifications, and related poses &
 Concise factual and reverse-lookup questions. \\
@@ -236,7 +236,7 @@ We restrict this set to degree-valued descriptors, which provide interpretable c
 Non-angular normalized quantities, including stance width, body-center offset, and shoulder- and hip-height differences, remain part of the geometric annotation taxonomy but are not used for geometry-QA generation or angle-regression supervision.
 
 \noindent\textbf{Metric facts and geometry graphs.}
-For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to an atomic metric fact
+For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to a single metric fact
 \begin{equation}
 f_m=(r_m,b_m,n_m,v_m,s_m),
 \label{eq:metric_fact}
@@ -254,7 +254,7 @@ Direct paths target one descriptor.
 Comparison paths pair corresponding left and right descriptors.
 Regional paths combine multiple measurements.
 Misconception paths verify a proposed condition.
-Instructor-observation paths verbalize a salient measured property.
+Instructor-observation paths express a notable measured property.
 
 \begin{table*}[t]
 \centering
@@ -271,7 +271,7 @@ Direct angle & One angular metric and its state & Read and interpret a measured 
 Comparison & A paired left--right metric & Compare corresponding body parts under a predefined rule & Include both values and the resulting comparison. \\
 Region summary & Multiple metrics from one region & Integrate a lower-body, upper-body, or trunk--neck configuration & Combine all selected values coherently. \\
 Misconception & Metrics relevant to a proposed condition & Confirm or reject an alignment statement & State the decision and cite the required values. \\
-Instructor observation & A salient metric and severity state & Express a teacher-style observation & Describe the measured property and cite its value. \\
+Instructor observation & A notable metric and severity state & Express a teacher-style observation & Describe the measured property and cite its value. \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -296,11 +296,11 @@ For a selected path $p_k$, the generator receives its evidence $E(p_k)$ and rece
 \end{equation}
 The prompt requires the pose name in the question and every selected angular value in the answer.
 It prohibits internal identifiers and unsupported spatial or biomechanical claims.
-The model therefore verbalizes a predefined evidence path.
+The model therefore puts a predefined evidence path into words.
 It does not infer unrestricted yoga knowledge.
 
 \noindent\textbf{Validation and numeric targets.}
-We check each candidate QA pair against rule-based criteria for pose-name presence, required numeric values, anatomical laterality, prohibited internal terms, path-specific constraints, and near-duplicate questions.
+We check each candidate QA pair against rule-based criteria for pose-name presence, required numeric values, left--right consistency, prohibited internal terms, path-specific constraints, and near-duplicate questions.
 Failed samples are regenerated at most twice, with the violated criteria supplied to the generator.
 If both regenerations fail, we use a deterministic evidence-based template.
 Each accepted record stores

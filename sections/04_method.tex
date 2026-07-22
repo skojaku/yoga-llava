@@ -15,7 +15,7 @@ where $\Theta$ denotes the trainable model parameters.
 
 As illustrated in Fig.~\ref{fig:yogallava_architecture}, YogaLLaVA V3 extends LLaVA-1.5-7B with two components for continuous geometric reasoning.
 First, a geometry encoder converts ordered scalar body measurements into tokens in the language-model embedding space.
-Second, an angle-regression head predicts a continuous value whenever the decoder emits a dedicated \texttt{<ANGLE>} token.
+Second, an angle-regression head predicts a continuous value whenever the decoder produces a dedicated \texttt{<ANGLE>} token.
 The predicted scalar is subsequently embedded back into the sequence, so that later words and angle slots condition on previously generated measurements.
 The design preserves standard autoregressive language generation and does not represent angles solely as sequences of discrete text tokens.
 
@@ -27,10 +27,10 @@ It does not independently reconstruct the complete geometry vector from RGB pixe
     \centering
     \includegraphics[width=0.98\textwidth]{method.png}
     \caption{Overview of YogaLLaVA V3. An input image is encoded by the frozen
-    LLaVA visual pathway, while an ordered set of degree-valued body descriptors
+    LLaVA vision encoder and projector, while an ordered set of degree-valued body descriptors
     is mapped to metric-aware \texttt{<GEO>} tokens. The causal language decoder
     attends jointly to visual, geometric, and textual context. When the decoder
-    emits an \texttt{<ANGLE>} token, a regression head predicts the associated
+    produces an \texttt{<ANGLE>} token, a regression head predicts the associated
     continuous value, which is embedded back into the sequence to condition
     subsequent generation.}
     \label{fig:yogallava_architecture}
@@ -59,12 +59,12 @@ Explicitly modeling validity is necessary because a missing measurement is seman
 \subsection{Multimodal Geometry Representation}
 \label{sec:geometry_representation}
 
-\noindent\textbf{Visual and language pathways.}
+\noindent\textbf{Visual and language inputs.}
 The image is processed by the pretrained CLIP ViT-L/14-336 vision encoder in LLaVA.
 Its patch-level features are projected into the language-model hidden space through the frozen multimodal projector.
 The instruction and question are tokenized using the LLaVA tokenizer and combined with the projected visual features in the standard LLaVA input sequence.
 
-To inject structured geometry, we append exactly $K$ special \texttt{<GEO>} placeholders in a fixed canonical order.
+To supply structured geometry, we append exactly $K$ special \texttt{<GEO>} placeholders in a fixed canonical order.
 Before decoding, the ordinary embeddings of these placeholders are replaced by geometry representations with the same dimensionality as the language-model hidden states.
 Consequently, visual features, text tokens, and structured measurements are processed within a shared autoregressive sequence.
 
@@ -221,13 +221,13 @@ After adding \texttt{<GEO>} and \texttt{<ANGLE>} to the vocabulary, the input-em
 \subsection{Autoregressive Inference}
 \label{sec:inference}
 
-At inference time, SAM 3D Body reconstruction provides the ordered geometry descriptors, while the LLaVA visual pathway encodes the input image.
+At inference time, SAM 3D Body reconstruction provides the ordered geometry descriptors, while the frozen LLaVA vision encoder and projector process the input image.
 The image, geometry tokens, instruction, and question are supplied without a reference answer.
 
 Decoding proceeds autoregressively.
 Ordinary tokens follow the standard LLaVA generation process.
 When \texttt{<ANGLE>} is selected, the hidden state that produced it is passed to the regression head to obtain $\widehat{v}_j$.
-The prediction is converted to degrees for the final response and encoded through Eq.~\eqref{eq:angle_feedback} as the embedding of the emitted \texttt{<ANGLE>} token before decoding resumes.
+The prediction is converted to degrees for the final response and encoded through Eq.~\eqref{eq:angle_feedback} as the embedding of that \texttt{<ANGLE>} token before decoding resumes.
 After generation, the placeholders are replaced in order by their predicted degree values.
 Token probabilities and scalar predictions are therefore not averaged or combined at the output level.
-The two interact through the slot-emission and continuous-value feedback mechanism.
+The two interact through the slot-placement and continuous-value feedback mechanism.
