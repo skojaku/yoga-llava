@@ -1,15 +1,14 @@
 \begin{abstract}
-Vision--language models for fine-grained understanding must connect image
-appearance to explicit, measurable geometry and domain-specific language.
-Most benchmarks pair images only with semantic labels or captions and omit
-the geometry that grounds them. Grounding between language and geometry
-therefore remains untrained and unevaluated. Yoga pose understanding poses
-this problem in a demanding form. Asanas differ in subtle joint flexion,
-limb elevation, trunk orientation, and bilateral symmetry. Yoga-82, the
-standard yoga-pose-recognition benchmark, provides only category labels,
-without 3D body measurements or language supervision grounded in them. We
-introduce \textbf{YogaAlign}, a benchmark derived from Yoga-82 that augments
-yoga images with SAM 3D Body reconstructions, interpretable joint- and
+Humans read subtle meaning from fine differences in body configuration.
+Vision--language models try to read this meaning from appearance, but a
+change in appearance and a change in meaning do not always correspond.
+Appearance therefore cannot reliably signal whether generated language
+matches the underlying body configuration. Here we ground vision--language
+pose understanding in explicit, measured body geometry, using yoga as a
+domain where such measurements and an established instructional vocabulary
+coexist. We introduce
+\textbf{YogaAlign}, a benchmark derived from Yoga-82 that augments yoga
+images with SAM 3D Body reconstructions, interpretable joint- and
 trunk-level descriptors, bilateral-symmetry measures, and instruction-style
 annotations. YogaAlign contains 10,090 records, comprising 6,000
 image-specific geometry-grounded question--answer pairs and 4,090
