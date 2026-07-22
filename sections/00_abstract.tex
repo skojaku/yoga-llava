@@ -2,9 +2,9 @@
 Humans read subtle meaning from fine differences in body configuration.
 While vision--language models can read this meaning from appearance, they often fall short in reading subtle visual changes with substantial implications for physiological, therapeutic, and cultural meaning. 
 %This mismatch blocks automated movement assessment in settings without a human expert present, including remote physical therapy, scaled coaching, and workplace ergonomic monitoring.
-Here we ground vision--language pose understanding in explicit, measured body geometry. 
-Using yoga as a challenging domain, we introduce \textbf{YogaAlign}, a benchmark that extends Yoga-82 with explicit, measured body geometry and instruction-style question--answer annotations grounded in that geometry.
-YogaAlign therefore lets generated language be checked against measured configuration instead of appearance.
+Generated language must therefore be checked against measured configuration instead of appearance alone.
+Here we ground vision--language pose understanding in explicit, measured body geometry, using yoga as a challenging domain.
+We introduce \textbf{YogaAlign}, a benchmark that extends Yoga-82 with explicit, measured body geometry and instruction-style question--answer annotations grounded in that geometry.
 YogaAlign contains 10,090 records, comprising 6,000 image-specific geometry-grounded question--answer pairs and 4,090 pose-level domain-knowledge pairs.
 
 We further propose \textbf{YogaLLaVA V3}, a geometry-conditioned vision--language model that represents structured measurements as metric-aware tokens and couples autoregressive language generation with continuous angle-slot regression.
