@@ -1,0 +1,850 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Geometry-Conditioned Yoga Pose Understanding}
+\label{sec:method_overview}
+
+We propose \textbf{YogaLLaVA V3}, the paper-facing name used for the
+PoseVLM V3 implementation and its selected checkpoint. YogaLLaVA V3 is
+a geometry-conditioned vision--language model for fine-grained yoga-pose
+understanding. Given an RGB image $I$, a natural-language question $q$,
+and an ordered set of structured body measurements $\mathcal{G}$, the
+model generates a natural-language answer $y$ that may contain both
+qualitative explanations and continuous angular values. We formulate
+the conditional generation problem as
+\begin{equation}
+    p(y \mid I,q,\mathcal{G}).
+    \label{eq:problem_formulation}
+\end{equation}
+
+The structured measurements are produced by the upstream SAM 3D Body
+reconstruction and metric-extraction pipeline described in
+Sec.~\ref{sec:dataset}. YogaLLaVA V3 therefore performs
+language-conditioned reasoning over visual information and supplied
+geometry. It does not independently reconstruct the complete geometry
+vector from RGB pixels.
+
+The model uses a fixed vocabulary of $K=14$ degree-valued descriptors:
+left and right knee flexion, left and right elbow flexion, left and
+right hip opening, left and right shoulder elevation, trunk tilt,
+lateral trunk bend, trunk twist, neck alignment, knee symmetry, and
+elbow symmetry. These descriptors form a degree-based subset of the
+broader annotation taxonomy introduced in Sec.~\ref{sec:dataset}.
+Scale-dependent quantities such as stance width and body-center offset
+are not supplied to the model. Hip symmetry is also not represented by
+a dedicated input descriptor, although three hip-symmetry targets occur
+in the held-out test set.
+
+The geometry input is represented as
+\begin{equation}
+    \mathcal{G}
+    =
+    \left\{
+        \left(\theta_k,m_k\right)
+    \right\}_{k=1}^{K},
+    \qquad
+    m_k\in\{0,1\},
+    \label{eq:geometry_input}
+\end{equation}
+where $\theta_k$ is the value of the $k$-th descriptor in degrees and
+$m_k$ indicates whether that measurement is available. The validity
+indicator is modeled explicitly because an unavailable measurement is
+semantically different from a valid value close to zero.
+
+YogaLLaVA V3 is built upon LLaVA-1.5-7B and introduces two mechanisms
+for continuous geometry reasoning. A geometry encoder maps the ordered
+structured measurements into token representations compatible with the
+language-model hidden space, while a dedicated angle-regression head
+predicts continuous values at special numeric positions in the answer.
+The resulting architecture integrates visual features, structured
+geometry, and language context in a unified autoregressive model.
+
+\subsection{Multimodal Geometry Representation}
+\label{sec:geometry_representation}
+
+\paragraph{Visual and linguistic representations.}
+The input image is processed by the pretrained CLIP ViT-L/14-336 vision
+encoder of LLaVA. The resulting patch-level visual features are mapped
+into the language-model hidden space through the frozen multimodal
+projector. The instruction and question are tokenized using the LLaVA
+tokenizer, and the standard LLaVA multimodal mechanism integrates the
+projected visual features with the textual sequence.
+
+To incorporate structured body geometry, the prompt contains exactly
+$K$ special \texttt{<GEO>} placeholders arranged in canonical metric
+order. Their ordinary token embeddings are replaced by the corresponding
+geometry representations before the sequence is processed by the causal
+language decoder. This places visual, linguistic, and structured numeric
+information in a shared embedding space.
+
+\paragraph{Continuous scalar encoding.}
+Each available degree-valued descriptor is normalized to $[0,1]$:
+\begin{equation}
+    v_k = \frac{\theta_k}{180}.
+    \label{eq:angle_normalization}
+\end{equation}
+To obtain a richer representation than a direct scalar projection, we
+encode $v_k$ using $B=16$ fixed logarithmically spaced Fourier frequency
+bands. The scalar feature map is
+\begin{equation}
+\begin{split}
+    \boldsymbol{\phi}(v_k)
+    =
+    \big[
+        &\sin(\omega_1v_k),\ldots,\sin(\omega_Bv_k),\\
+        &\cos(\omega_1v_k),\ldots,\cos(\omega_Bv_k),
+        v_k
+    \big].
+\end{split}
+\label{eq:fourier_features}
+\end{equation}
+This construction yields $2B+1=33$ features. A two-layer multilayer
+perceptron with hidden dimension 256 projects the Fourier representation
+into the $d=4096$ dimensional language-model space:
+\begin{equation}
+    \mathbf{z}_k
+    =
+    f_{\mathrm{geo}}
+    \left(
+        \boldsymbol{\phi}(v_k)
+    \right),
+    \qquad
+    \mathbf{z}_k\in\mathbb{R}^{d}.
+    \label{eq:scalar_projection}
+\end{equation}
+
+\paragraph{Metric identity and missing geometry.}
+A scalar value is not meaningful without its anatomical identity. Each
+descriptor therefore has a learned metric-identity embedding
+$\mathbf{e}^{\mathrm{id}}_k\in\mathbb{R}^{d}$. The geometry token for
+descriptor $k$ is
+\begin{equation}
+    \mathbf{g}_k =
+    \begin{cases}
+    \operatorname{LN}\!\left(
+        \mathbf{e}^{\mathrm{id}}_k + \mathbf{z}_k
+    \right), & m_k=1, \\[5pt]
+    \operatorname{LN}\!\left(
+        \mathbf{e}^{\mathrm{id}}_k +
+        \mathbf{e}^{\mathrm{miss}}
+    \right), & m_k=0,
+    \end{cases}
+    \label{eq:geometry_token}
+\end{equation}
+where $\mathbf{e}^{\mathrm{miss}}\in\mathbb{R}^{d}$ is a learned
+missing-value embedding and $\operatorname{LN}$ denotes layer
+normalization. The complete geometry sequence is
+\begin{equation}
+    \mathbf{G}
+    =
+    [\mathbf{g}_1,\ldots,\mathbf{g}_K]
+    \in\mathbb{R}^{K\times d}.
+    \label{eq:geometry_sequence}
+\end{equation}
+These vectors replace the corresponding \texttt{<GEO>} placeholder
+embeddings, allowing the decoder to jointly attend to image features,
+geometry tokens, and language context.
+
+\subsection{Angle-Aware Language Generation}
+\label{sec:angle_generation}
+
+Conventional language models express numbers as sequences of discrete
+tokens. To separate linguistic structure from continuous-value
+prediction, YogaLLaVA V3 introduces the special token
+\texttt{<ANGLE>}. During training, each degree value in a
+geometry-grounded answer is replaced by \texttt{<ANGLE>}, while the
+corresponding normalized target is stored separately and aligned with
+that token position. For example,
+\begin{quote}
+\small
+\textit{The left knee flexion angle is $140.2^\circ$.}
+\end{quote}
+is represented internally as
+\begin{quote}
+\small
+\texttt{The left knee flexion angle is <ANGLE>.}
+\end{quote}
+
+The language model learns where a numeric value belongs by predicting
+\texttt{<ANGLE>}; the regression branch predicts the continuous number
+associated with that position. Let $p_j$ denote the sequence position of
+the $j$-th \texttt{<ANGLE>} token. Because the decoder is causal, the
+hidden state $\mathbf{h}_{p_j-1}$ is the state that produces the token at
+$p_j$. The normalized angle prediction is
+\begin{equation}
+    \widehat{v}_j
+    =
+    \sigma\!\left(
+        f_{\mathrm{reg}}
+        \left(
+            \mathbf{h}_{p_j-1}
+        \right)
+    \right),
+    \label{eq:angle_regression}
+\end{equation}
+where $f_{\mathrm{reg}}$ consists of layer normalization, a
+$4096\!\rightarrow\!512$ linear layer, GELU activation, and a
+$512\!\rightarrow\!1$ linear layer. The sigmoid constrains the output to
+$[0,1]$, and the value in degrees is recovered as
+\begin{equation}
+    \widehat{\theta}_j
+    =
+    180\widehat{v}_j.
+    \label{eq:angle_denormalization}
+\end{equation}
+
+Reading $\mathbf{h}_{p_j-1}$ ensures that the current scalar is predicted
+from the preceding causal context rather than from the value-conditioned
+embedding placed at the current \texttt{<ANGLE>} position.
+
+\paragraph{Continuous-value feedback.}
+After an angle slot is emitted, its scalar value is embedded back into
+the sequence so that subsequent words and later angle slots can
+condition on it. A second scalar encoder, independent of
+$f_{\mathrm{geo}}$, defines
+\begin{equation}
+    \mathbf{a}(u_j)
+    =
+    \mathbf{e}^{\mathrm{angle}}
+    +
+    f_{\mathrm{slot}}
+    \left(
+        \boldsymbol{\phi}(u_j)
+    \right),
+    \label{eq:angle_feedback}
+\end{equation}
+where $\mathbf{e}^{\mathrm{angle}}$ is a learned base embedding. During
+teacher-forced training, $u_j$ is the reference normalized value.
+During autoregressive inference, $u_j=\widehat{v}_j$. Thus, later output
+tokens condition on the reference value during training and on the
+model's own prediction during generation.
+
+\subsection{Joint Language and Geometry Learning}
+\label{sec:training_objective}
+
+YogaLLaVA V3 is trained jointly for answer generation and continuous
+angle prediction. Language supervision is applied only to the assistant
+answer span; the image placeholder, geometry placeholders, instruction,
+question, and padding positions are excluded from the language loss.
+
+Let $\mathcal{T}$ denote the supervised assistant-token positions. The
+causal language-modeling loss is
+\begin{equation}
+    \mathcal{L}_{\mathrm{LM}}
+    =
+    -\frac{1}{|\mathcal{T}|}
+    \sum_{t\in\mathcal{T}}
+    \log
+    p
+    \left(
+        y_t
+        \mid
+        y_{<t},I,q,\mathcal{G}
+    \right).
+    \label{eq:language_loss}
+\end{equation}
+For a batch containing $N$ supervised angle slots, continuous prediction
+is optimized in normalized angle space using
+\begin{equation}
+    \mathcal{L}_{\mathrm{ang}}
+    =
+    \frac{1}{N}
+    \sum_{j=1}^{N}
+    \operatorname{SmoothL1}_{\beta}
+    \left(
+        \widehat{v}_j-v_j
+    \right).
+    \label{eq:regression_loss}
+\end{equation}
+The complete objective is
+\begin{equation}
+    \mathcal{L}
+    =
+    \mathcal{L}_{\mathrm{LM}}
+    +
+    \lambda_{\mathrm{ang}}
+    \mathcal{L}_{\mathrm{ang}},
+    \label{eq:total_loss}
+\end{equation}
+with $\lambda_{\mathrm{ang}}=0.75$ and $\beta=0.05$, corresponding to a
+$9^\circ$ transition point. The language term is implemented as causal
+cross-entropy with label smoothing. Domain-knowledge records containing
+no \texttt{<ANGLE>} slots contribute only
+$\mathcal{L}_{\mathrm{LM}}$.
+
+Full geometry dropout is applied to 15\% of geometry-grounded training
+records. For a selected record, all geometry measurements are marked
+unavailable and represented through the learned missing-value embedding.
+
+The CLIP vision encoder and multimodal projector remain frozen. The
+Vicuna language decoder is adapted through LoRA with rank 32, scaling
+parameter 64, and dropout 0.10. LoRA is applied to the
+$q$, $k$, $v$, and $o$ attention projections and the gate, up, and down
+feed-forward projections. The geometry encoder, angle-feedback encoder,
+learned angle base embedding, regression head, and LoRA parameters are
+trained jointly. The input embedding and language-model output
+projection are also trainable after adding \texttt{<GEO>} and
+\texttt{<ANGLE>} to the vocabulary.
+
+\subsection{Autoregressive Inference}
+\label{sec:inference}
+
+At inference time, the upstream reconstruction pipeline supplies the
+ordered geometry descriptors, while the image is processed by the
+LLaVA visual stream. The image, geometry tokens, instruction, and
+question are provided without a reference answer.
+
+Generation proceeds one token at a time. When an ordinary token is
+selected, decoding continues normally. When the model emits
+\texttt{<ANGLE>}, the hidden state that produced the token is passed
+through the regression head to obtain a continuous prediction. The
+prediction is converted to degrees, encoded through
+Eq.~\eqref{eq:angle_feedback}, and inserted as the embedding of the
+emitted \texttt{<ANGLE>} token before generation continues. After
+decoding, the \texttt{<ANGLE>} placeholders are replaced in sequence
+order by their predicted degree values. Token probabilities and
+regression values are not averaged; they interact through this
+placeholder-and-regression mechanism.
+
+\section{Experimental Setup}
+\label{sec:experimental_setup}
+
+\subsection{Dataset Splits}
+\label{sec:dataset_splits}
+
+We conduct experiments on the combined domain-knowledge and
+geometry-grounded QA dataset introduced in Sec.~\ref{sec:dataset}. The
+dataset contains 10,090 records: 6,000 geometry-grounded examples and
+4,090 domain-knowledge examples. The fixed splits are summarized in
+Table~\ref{tab:dataset_splits}.
+
+\begin{table}[t]
+    \centering
+    \caption{Composition of the YogaLLaVA V3 instruction-tuning dataset.}
+    \label{tab:dataset_splits}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Split} &
+        \textbf{Geometry QA} &
+        \textbf{Domain QA} &
+        \textbf{Total} &
+        \textbf{Angle Slots} \\
+        \midrule
+        Training   & 5,396 & 3,690 & 9,086 & 9,163 \\
+        Validation &   294 &   200 &   494 &   493 \\
+        Test       &   310 &   200 &   510 &   521 \\
+        \midrule
+        Total      & 6,000 & 4,090 & 10,090 & 10,177 \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+The geometry-grounded subset is constructed from 3,000 selected images,
+with two QA records associated with each image. It contains 3,000
+direct-angle, 905 comparison, 900 regional-summary, 600 misconception,
+and 595 instructor-observation records.
+
+The test images are not present in training, but pose categories are
+shared across the splits. The evaluation therefore measures
+generalization to unseen images within known yoga-pose categories, not
+generalization to entirely unseen poses.
+
+\subsection{Model Configuration}
+\label{sec:model_configuration}
+
+YogaLLaVA V3 is initialized from
+\texttt{llava-hf/llava-1.5-7b-hf}. The vision component uses CLIP
+ViT-L/14-336 at $336\times336$ resolution, yielding 576 selected patch
+tokens with feature width 1,024. The multimodal projector maps these
+features to the 4,096-dimensional language-model hidden space. The
+Vicuna/LLaMA decoder contains 32 transformer layers and 32 attention
+heads. The maximum tokenized sequence length is 1,280.
+
+The scalar encoders use 16 Fourier bands, a 33-dimensional Fourier
+representation, a hidden projection of 256, and an output projection of
+4,096. The angle-regression head uses the architecture
+$4096\!\rightarrow\!512\!\rightarrow\!1$ with layer normalization,
+GELU, and sigmoid activation. The vision encoder and multimodal
+projector are frozen, while the LoRA adapters and custom geometry and
+regression modules are trained.
+
+\subsection{Training Protocol}
+\label{sec:training_protocol}
+
+YogaLLaVA V3 is trained for 12 epochs with AdamW, weight decay 0.01,
+and gradient clipping at 1.0. The per-step batch size is four, and
+gradients are accumulated over eight minibatches, producing an effective
+batch size of 32. We use a cosine learning-rate schedule with linear
+warm-up over the first 3\% of optimizer updates.
+
+Three parameter groups use separate learning rates:
+\begin{itemize}
+    \item $1.5\times10^{-4}$ for the LoRA adapters;
+    \item $2\times10^{-5}$ for the input-embedding and output-projection
+    matrices; and
+    \item $1\times10^{-4}$ for the geometry encoder, scalar-value
+    encoders, angle base embedding, and regression head.
+\end{itemize}
+
+The pretrained base model is loaded in bfloat16 precision, while the
+custom numerical modules are maintained in float32. All experiments are
+conducted using PyTorch on a single NVIDIA RTX A6000 GPU. Python, NumPy,
+PyTorch, and CUDA random seeds are fixed before training.
+
+Validation is performed after each epoch. The selected checkpoint is
+the epoch-10 checkpoint, which achieves the lowest teacher-forced
+validation angle RMSE of $19.8274^\circ$, with validation MAE
+$12.6342^\circ$ and $R^2=0.8739$. The checkpoint-selection criterion
+therefore optimizes teacher-forced numeric validation accuracy rather
+than free-running language quality.
+
+\subsection{Evaluation Protocol}
+\label{sec:evaluation_protocol}
+
+\paragraph{Teacher-forced angle-slot regression.}
+The principal numeric test evaluates teacher-forced angle-slot
+regression. The full reference answer sequence is supplied, including
+the correct number, positions, and ordering of all
+\texttt{<ANGLE>} tokens. The regression head predicts the numeric value
+at each known slot.
+
+This protocol evaluates continuous prediction given the reference
+answer structure. It does not test whether free-running generation emits
+an angle slot when required, produces the correct number of slots,
+associates each slot with the intended anatomical metric, preserves
+multi-metric ordering, generates coherent non-repetitive prose,
+maintains consistency between numeric predictions and qualitative
+conclusions, or terminates correctly.
+
+For $N$ supervised slots with reference values $\theta_i$ and
+predictions $\widehat{\theta}_i$, we report
+\begin{equation}
+    \operatorname{MAE}
+    =
+    \frac{1}{N}
+    \sum_{i=1}^{N}
+    \left|
+        \widehat{\theta}_i-\theta_i
+    \right|,
+    \label{eq:evaluation_mae}
+\end{equation}
+\begin{equation}
+    \operatorname{RMSE}
+    =
+    \sqrt{
+        \frac{1}{N}
+        \sum_{i=1}^{N}
+        \left(
+            \widehat{\theta}_i-\theta_i
+        \right)^2
+    },
+    \label{eq:evaluation_rmse}
+\end{equation}
+and
+\begin{equation}
+    R^2
+    =
+    1-
+    \frac{
+        \sum_{i=1}^{N}
+        \left(
+            \theta_i-\widehat{\theta}_i
+        \right)^2
+    }{
+        \sum_{i=1}^{N}
+        \left(
+            \theta_i-\overline{\theta}
+        \right)^2
+    }.
+    \label{eq:evaluation_r2}
+\end{equation}
+We additionally report Pearson correlation and the percentages of
+predictions within $5^\circ$, $10^\circ$, and $15^\circ$ of the
+references.
+
+For 518 of the 521 test slots, the exact requested measurement is
+already present in the structured geometry input. This evaluation
+therefore primarily measures question-conditioned descriptor
+identification, routing, selection, numeric reproduction, and
+contextual expression of supplied geometry. It is not an evaluation of
+independent image-only physical angle recovery.
+
+The numeric references are reconstruction-derived pseudo-measurements
+from SAM 3D Body. They are not motion-capture, manually verified
+biomechanical, clinical, diagnostic, or rehabilitation ground truth.
+
+\paragraph{Autoregressive generation comparison.}
+We also report free-running generation on the 310 geometry-grounded test
+records. This comparison uses the selected PoseVLM V3 checkpoint
+evaluated through the later comparison pipeline and explanatory prompt;
+the generation metrics are separate from the original teacher-forced
+test artifact. YogaLLaVA V3 receives image, question, and structured
+geometry, while zero-shot LLaVA-1.5-7B and Qwen2.5-VL-7B-Instruct
+receive image and question only. The baseline questions identify the
+requested target metrics and expected order, but do not provide their
+numeric geometry values.
+
+Because numeric outputs can be aligned only when the generated and
+reference slot counts match, we report model-specific slot-count
+coverage and a common-success comparison over records on which all three
+models produce the correct number of numeric slots. We do not report
+modality ablations, pose-held-out evaluation, or independently annotated
+biomechanical evaluation.
+
+\section{Results and Analysis}
+\label{sec:results}
+
+\subsection{Overall Teacher-Forced Angle-Slot Regression}
+\label{sec:overall_results}
+
+Table~\ref{tab:overall_results} reports teacher-forced angle-slot
+regression over 521 known reference slots from the 310
+geometry-grounded test records.
+
+\begin{table}[t]
+    \centering
+    \caption{Teacher-forced angle-slot regression on the held-out test
+    set. Errors are measured against SAM 3D Body-derived geometric
+    pseudo-measurements.}
+    \label{tab:overall_results}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Metric} & \textbf{YogaLLaVA V3} \\
+        \midrule
+        Number of angle slots & 521 \\
+        MSE & $476.28~\mathrm{deg}^2$ \\
+        RMSE $\downarrow$ & $21.82^\circ$ \\
+        MAE $\downarrow$ & $13.98^\circ$ \\
+        $R^2$ $\uparrow$ & 0.832 \\
+        Pearson correlation $\uparrow$ & 0.913 \\
+        Within $5^\circ$ $\uparrow$ & 34.36\% \\
+        Within $10^\circ$ $\uparrow$ & 57.01\% \\
+        Within $15^\circ$ $\uparrow$ & 70.63\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+At known reference slot positions, YogaLLaVA V3 differs from the
+reconstruction-derived values by $13.98^\circ$ on average and achieves
+an RMSE of $21.82^\circ$. Approximately 57.01\% of the predictions lie
+within $10^\circ$ of the corresponding references. These values are
+valid held-out teacher-forced regression results, but they are not
+complete free-running inference metrics.
+
+Because 518 of 521 targets are already available in the structured
+geometry input, the result primarily supports the model's ability to
+identify, route, select, reproduce, and linguistically express supplied
+geometry. It does not demonstrate independent recovery of physical
+joint angles from RGB pixels.
+
+\subsection{Performance Across Question Types}
+\label{sec:path_results}
+
+\begin{table}[t]
+    \centering
+    \caption{Teacher-forced angle-slot regression grouped by
+    geometry-question type.}
+    \label{tab:path_results}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrrrr}
+        \toprule
+        \textbf{Question Type} &
+        \textbf{Slots} &
+        \textbf{RMSE $\downarrow$} &
+        \textbf{MAE $\downarrow$} &
+        \textbf{$R^2$ $\uparrow$} &
+        \textbf{Within $10^\circ$ $\uparrow$} \\
+        \midrule
+        Comparison & 106 & $21.53^\circ$ & $12.95^\circ$ & 0.791 & 62.26\% \\
+        Direct angle & 155 & $22.65^\circ$ & $15.22^\circ$ & 0.821 & 51.61\% \\
+        Instructor observation & 31 & $28.69^\circ$ & $21.08^\circ$ & 0.054 & 25.81\% \\
+        Misconception & 32 & $17.10^\circ$ & $11.28^\circ$ & 0.877 & 68.75\% \\
+        Region summary & 197 & $20.72^\circ$ & $12.88^\circ$ & 0.847 & 61.42\% \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+Misconception questions have the lowest MAE and the highest
+within-$10^\circ$ rate, although the subset contains only 32 slots and
+should be interpreted cautiously. Regional summaries also perform
+relatively well despite requiring several measurements to be expressed
+within a single answer.
+
+Instructor-observation questions are the weakest category: they have
+the largest RMSE and MAE, the lowest $R^2$, and the lowest
+within-$10^\circ$ accuracy. One possible explanation is that indirect
+or teacher-style wording makes the requested descriptor less explicit,
+although the current experiment does not isolate the cause.
+
+\subsection{Performance Across Geometric Descriptors}
+\label{sec:metric_results}
+
+\begin{table}[t]
+    \centering
+    \caption{Teacher-forced angle-slot regression grouped by target
+    descriptor.}
+    \label{tab:metric_results}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Descriptor} &
+        \textbf{Slots} &
+        \textbf{RMSE $\downarrow$} &
+        \textbf{MAE $\downarrow$} \\
+        \midrule
+        Knee symmetry & 4 & $3.23^\circ$ & $2.68^\circ$ \\
+        Elbow symmetry & 4 & $6.90^\circ$ & $5.53^\circ$ \\
+        Hip symmetry & 3 & $10.18^\circ$ & $7.82^\circ$ \\
+        Trunk twist & 33 & $11.02^\circ$ & $6.84^\circ$ \\
+        Lateral trunk bend & 38 & $14.92^\circ$ & $9.24^\circ$ \\
+        Right shoulder elevation & 34 & $14.82^\circ$ & $9.89^\circ$ \\
+        Trunk tilt & 34 & $15.48^\circ$ & $9.50^\circ$ \\
+        Neck alignment & 37 & $17.34^\circ$ & $12.75^\circ$ \\
+        Left hip opening & 48 & $18.40^\circ$ & $13.28^\circ$ \\
+        Right knee flexion & 51 & $22.55^\circ$ & $12.09^\circ$ \\
+        Left knee flexion & 47 & $23.66^\circ$ & $15.56^\circ$ \\
+        Right elbow flexion & 50 & $24.80^\circ$ & $18.39^\circ$ \\
+        Right hip opening & 48 & $25.41^\circ$ & $17.36^\circ$ \\
+        Left elbow flexion & 47 & $27.77^\circ$ & $18.46^\circ$ \\
+        Left shoulder elevation & 43 & $31.22^\circ$ & $21.23^\circ$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+The symmetry rows contain only three or four slots and do not support
+broad conclusions. Among descriptors with more substantial test
+support, trunk twist has the lowest MAE. Trunk tilt, lateral trunk bend,
+and right shoulder elevation also show comparatively low errors.
+
+Left shoulder elevation is the most difficult descriptor, with the
+largest RMSE and MAE. Left and right elbow flexion and right hip opening
+are also relatively difficult. Differences may reflect descriptor
+distributions, reconstruction noise, template frequency, or
+left--right ambiguity, but these explanations remain hypotheses rather
+than established causes.
+
+Hip symmetry is structurally different from the other rows because it
+is not represented by a dedicated token in the 14-descriptor input
+vocabulary. Its three targets therefore cannot be directly routed from
+an independent hip-symmetry token.
+
+\subsection{Autoregressive Generation Comparison}
+\label{sec:generation_comparison}
+
+The free-running comparison is conducted on the 310
+geometry-grounded test records. YogaLLaVA V3 is geometry-conditioned
+and task-specifically trained; LLaVA-1.5-7B and Qwen2.5-VL-7B are
+evaluated zero-shot with image and question only. The comparison is
+therefore not modality matched and does not isolate the causal
+contribution of geometry conditioning, instruction tuning, or
+continuous angle regression.
+
+\paragraph{Model-specific slot-count coverage.}
+Table~\ref{tab:generation_coverage} reports the number of records on
+which each model emits the correct number of numeric slots. Numeric
+errors in this table are calculated only over each model's own
+successful subset and are therefore not directly comparable.
+
+\begin{table}[t]
+    \centering
+    \caption{Model-specific free-generation slot-count coverage on 310
+    geometry-grounded test records. Numeric metrics are calculated on
+    different model-specific successful subsets.}
+    \label{tab:generation_coverage}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrrrr}
+        \toprule
+        \textbf{Model} &
+        \textbf{Correct Records} &
+        \textbf{Slot Match} &
+        \textbf{Scored Slots} &
+        \textbf{MAE $\downarrow$} &
+        \textbf{RMSE $\downarrow$} \\
+        \midrule
+        YogaLLaVA V3 & 267/310 & 86.1\% & 365 & $25.14^\circ$ & -- \\
+        LLaVA-1.5-7B & 205/310 & 66.1\% & 283 & $45.80^\circ$ & $56.30^\circ$ \\
+        Qwen2.5-VL-7B & 211/310 & 68.1\% & 253 & $45.46^\circ$ & $58.21^\circ$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+YogaLLaVA V3 produces the correct number of values on 267 of 310
+records, compared with 205 for LLaVA and 211 for Qwen. The
+model-specific MAEs should not be read as a fair standalone accuracy
+ranking because the models are scored on different records and slots.
+Successful-subset filtering can favor a model that fails to produce
+valid slot counts on more difficult examples.
+
+For completeness, LLaVA and Qwen achieve within-$10^\circ$ rates of
+15.55\% and 15.42\%, respectively, on their own successful subsets.
+The corresponding value was not supplied for YogaLLaVA V3 and is not
+inferred.
+
+\paragraph{Common-success comparison.}
+To compare numeric accuracy on aligned examples, we evaluate the 160
+records on which all three models generate the correct number of
+numeric slots.
+
+\begin{table}[t]
+    \centering
+    \caption{Free-generation numeric accuracy on the common-success
+    subset of 160 records for which all three models produced the
+    correct number of numeric slots.}
+    \label{tab:common_success}
+    \begin{tabular}{lrr}
+        \toprule
+        \textbf{Model} &
+        \textbf{Slot MAE $\downarrow$} &
+        \textbf{Slot RMSE $\downarrow$} \\
+        \midrule
+        YogaLLaVA V3 & $17.65^\circ$ & $27.23^\circ$ \\
+        LLaVA-1.5-7B & $42.80^\circ$ & $52.59^\circ$ \\
+        Qwen2.5-VL-7B & $46.91^\circ$ & $61.12^\circ$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+On this shared subset, YogaLLaVA V3 obtains lower slot-level error than
+the two zero-shot baselines. Record-level macro MAE and bootstrap
+intervals are shown in Table~\ref{tab:bootstrap_results}.
+
+\begin{table}[t]
+    \centering
+    \caption{Record-level macro MAE with 95\% bootstrap confidence
+    intervals on the 160-record common-success subset.}
+    \label{tab:bootstrap_results}
+    \begin{tabular}{lrr}
+        \toprule
+        \textbf{Model} &
+        \textbf{Macro MAE $\downarrow$} &
+        \textbf{95\% CI} \\
+        \midrule
+        YogaLLaVA V3 & $16.98^\circ$ & $[14.15,\,20.17]^\circ$ \\
+        LLaVA-1.5-7B & $41.84^\circ$ & $[37.33,\,46.41]^\circ$ \\
+        Qwen2.5-VL-7B & $47.63^\circ$ & $[41.59,\,53.87]^\circ$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The paired macro-MAE difference is $24.85^\circ$ for
+LLaVA minus YogaLLaVA V3, with a 95\% confidence interval of
+$[19.45,\,30.35]^\circ$. For Qwen minus YogaLLaVA V3, the difference is
+$30.64^\circ$, with a 95\% confidence interval of
+$[23.70,\,37.83]^\circ$.
+
+These results show an advantage for the complete YogaLLaVA V3 system
+on the aligned common-success subset. They do not establish superiority
+under identical inputs: YogaLLaVA V3 receives structured geometry and
+task-specific training, while the baselines receive only image and
+question in a zero-shot setting. The comparison therefore measures the
+combined effect of structured geometry, task-specific instruction
+tuning, and continuous angle-slot regression.
+
+\paragraph{Baseline language overlap.}
+Table~\ref{tab:baseline_language_results} reports lexical-overlap
+metrics for the two zero-shot baselines. No corresponding saved
+YogaLLaVA V3 language-overlap result is claimed.
+
+\begin{table}[t]
+    \centering
+    \caption{Lexical-overlap metrics for the zero-shot baselines under
+autoregressive generation.}
+    \label{tab:baseline_language_results}
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Model} &
+        \textbf{BLEU-4 $\uparrow$} &
+        \textbf{ROUGE-L $\uparrow$} &
+        \textbf{Token F1 $\uparrow$} \\
+        \midrule
+        LLaVA-1.5-7B & 0.103 & 0.247 & 0.313 \\
+        Qwen2.5-VL-7B & 0.091 & 0.236 & 0.318 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+These lexical metrics are not direct evidence of numeric or geometric
+correctness. A response may overlap with the reference while containing
+an inaccurate angle, anatomical side, comparison, or conclusion.
+
+\subsection{Training Dynamics}
+\label{sec:training_dynamics}
+
+\begin{table}[t]
+    \centering
+    \caption{YogaLLaVA V3 training and teacher-forced validation
+    performance. Epoch 10 is selected by minimum validation angle RMSE.}
+    \label{tab:training_results}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{crrrrr}
+        \toprule
+        \textbf{Epoch} &
+        \textbf{Train Loss} &
+        \textbf{Val. Loss} &
+        \textbf{Val. RMSE $\downarrow$} &
+        \textbf{Val. MAE $\downarrow$} &
+        \textbf{$R^2$ $\uparrow$} \\
+        \midrule
+        1  & 1.6154 & 1.1739 & $31.42^\circ$ & $21.40^\circ$ & 0.683 \\
+        2  & 1.0768 & 1.1369 & $28.75^\circ$ & $20.61^\circ$ & 0.735 \\
+        3  & 0.9607 & 1.1370 & $24.32^\circ$ & $16.59^\circ$ & 0.810 \\
+        4  & 0.8407 & 1.1841 & $24.81^\circ$ & $15.79^\circ$ & 0.803 \\
+        5  & 0.7323 & 1.2609 & $21.62^\circ$ & $14.25^\circ$ & 0.850 \\
+        6  & 0.6481 & 1.3490 & $21.18^\circ$ & $13.72^\circ$ & 0.856 \\
+        7  & 0.5976 & 1.3969 & $20.79^\circ$ & $13.03^\circ$ & 0.861 \\
+        8  & 0.5624 & 1.4319 & $20.07^\circ$ & $13.02^\circ$ & 0.871 \\
+        9  & 0.5405 & 1.4645 & $19.94^\circ$ & $12.74^\circ$ & 0.872 \\
+        \textbf{10} & \textbf{0.5271} & 1.4821 &
+        $\mathbf{19.83^\circ}$ & $\mathbf{12.63^\circ}$ & \textbf{0.874} \\
+        11 & 0.5198 & 1.5038 & $19.93^\circ$ & $12.65^\circ$ & 0.873 \\
+        12 & 0.5175 & 1.5082 & $20.03^\circ$ & $12.69^\circ$ & 0.871 \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+Training loss decreases steadily across all 12 epochs. Validation angle
+RMSE also improves substantially and reaches its minimum at epoch 10.
+In contrast, total validation loss is lowest around epochs 2--3 and
+then increases. Because the total validation objective combines
+language cross-entropy with weighted regression loss and is dominated
+by the language term, this pattern is consistent with language-side
+overfitting while numeric validation RMSE continues to improve. It is
+not, by itself, definitive proof of the cause.
+
+The selected epoch-10 checkpoint achieves validation RMSE
+$19.8274^\circ$, MAE $12.6342^\circ$, and $R^2=0.8739$. The selection
+policy optimizes teacher-forced numeric validation RMSE rather than
+free-running generated-language quality.
+
+\subsection{Interpretation and Scope}
+\label{sec:result_interpretation}
+
+YogaLLaVA V3 achieves a teacher-forced test MAE of $13.98^\circ$ and
+RMSE of $21.82^\circ$ across 521 known angle slots, with 57.01\% of
+predictions falling within $10^\circ$ of the reconstruction-derived
+references. These values measure regression at known reference slot
+locations and do not equal complete free-running inference performance.
+
+During free generation, the model must additionally determine whether a
+numeric slot is needed, emit the correct number of
+\texttt{<ANGLE>} tokens, associate and order them correctly, generate
+coherent prose, maintain consistency between numerical and qualitative
+content, and terminate properly. The generation results are therefore
+reported separately from teacher-forced regression.
+
+For 518 of 521 test targets, the exact requested metric and value are
+already present in the structured geometry input. The principal
+teacher-forced result consequently supports structured-geometry routing,
+question-conditioned selection, numeric reproduction, and
+language-conditioned expression. It does not demonstrate independent
+image-only recovery of physical joint angles.
+
+The references are SAM 3D Body-derived pseudo-measurements and may be
+affected by occlusion, viewpoint, foreshortening, loose clothing,
+unusual inversions, left--right ambiguity, and monocular depth
+uncertainty. The results should not be interpreted as clinical,
+diagnostic, rehabilitation, motion-capture, or manually verified
+biomechanical accuracy. Finally, because the test split contains unseen
+images but shares pose categories with training, the experiments do not
+establish generalization to unseen yoga poses.
