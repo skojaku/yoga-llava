@@ -1,37 +1,26 @@
 \section{YogaAlign Dataset}
 \label{sec:dataset}
 
-We construct \textbf{YogaAlign}, a geometry-grounded vision--language
-benchmark that extends Yoga-82 with reconstructed 3D body structure,
-interpretable geometric measurements, and instruction-style question--answer
-(QA) annotations. The benchmark supports reasoning beyond pose
-recognition, including joint-angle interpretation, bilateral comparison,
-regional alignment analysis, and pose-specific instructional knowledge. Its
-construction comprises three stages. We reconstruct a 3D body from each image,
-extract structured geometric descriptors, and generate two complementary QA
-sets grounded in either pose-level textual knowledge or image-specific
-geometry.
+We construct \textbf{YogaAlign}, a geometry-grounded vision--language benchmark that extends Yoga-82 with reconstructed 3D body structure, interpretable geometric measurements, and instruction-style question--answer (QA) annotations.
+The benchmark supports reasoning beyond pose recognition, including joint-angle interpretation, bilateral comparison, regional alignment analysis, and pose-specific instructional knowledge.
+At a high level, we construct it in three stages as follows.
+We reconstruct a 3D body from each image, then extract structured geometric descriptors, and finally generate two complementary QA sets grounded in either pose-level textual knowledge or image-specific geometry.
 
 \subsection{Source Images and 3D Body Reconstruction}
 \label{subsec:source_reconstruction}
 
 \noindent\textbf{Yoga-82 source dataset.}
-YogaAlign is built on Yoga-82~\cite{verma2020yoga82}, which contains 28,478
-images spanning 82 fine-grained yoga-pose categories. The images were collected
-from online sources and exhibit substantial variation in viewpoint, background,
-illumination, clothing, practitioner appearance, and execution style. Yoga-82
-is therefore a challenging substrate for geometry-aware reasoning: many poses
-differ through subtle changes in limb articulation, trunk orientation, balance,
-or bilateral symmetry. However, the original dataset provides only RGB images
-and category labels; it does not include 3D body structure, geometric
-measurements, or language annotations.
+YogaAlign is built on Yoga-82~\cite{verma2020yoga82}, which contains 28,478 images spanning 82 fine-grained yoga-pose categories.
+The images were collected from online sources and exhibit substantial variation in viewpoint, background, illumination, clothing, practitioner appearance, and execution style.
+Yoga-82 is therefore a challenging substrate for geometry-aware reasoning.
+Many poses differ through subtle changes in limb articulation, trunk orientation, balance, or bilateral symmetry.
+The original dataset, however, provides only RGB images and category labels.
+It does not include 3D body structure, geometric measurements, or language annotations.
 
 \noindent\textbf{Monocular body reconstruction.}
-We recover a 3D body representation from each Yoga-82 image using the pretrained
-SAM 3D Body model~\cite{yang2026sam3dbody}. Given an image $I$, the model
-predicts an articulated body and surface mesh under the Momentum Human Rig
-(MHR) representation. We retain the predicted mesh vertices and anatomical
-keypoints required by the subsequent measurement stage (Fig.~\ref{fig:sam3d_examples}).
+We recover a 3D body representation from each Yoga-82 image using the pretrained SAM 3D Body model~\cite{yang2026sam3dbody}.
+Given an image $I$, the model predicts an articulated body and surface mesh under the Momentum Human Rig (MHR) representation.
+We retain the predicted mesh vertices and anatomical keypoints required by the subsequent measurement stage (Fig.~\ref{fig:sam3d_examples}).
 
 \begin{figure*}[!t]
     \centering
@@ -42,20 +31,17 @@ keypoints required by the subsequent measurement stage (Fig.~\ref{fig:sam3d_exam
     \label{fig:sam3d_examples}
 \end{figure*}
 
-The recovered bodies are treated as reconstruction-derived geometric proxies,
-not as motion-capture or manually verified biomechanical ground truth. Their
-accuracy may be affected by self-occlusion, foreshortening, loose clothing,
-unusual inversions, left--right ambiguity, and monocular depth uncertainty.
+We treat the recovered bodies as reconstruction-derived geometric proxies.
+The reconstructions are not motion capture or manually verified biomechanical ground truth.
+Their accuracy may be affected by self-occlusion, foreshortening, loose clothing, unusual inversions, left--right ambiguity, and monocular depth uncertainty.
 
 \subsection{Geometric Measurement Extraction}
 \label{subsec:geometric_measurements}
 
-Dense meshes are expressive but unnecessarily high-dimensional for
-language-grounded pose analysis. We therefore distill each reconstruction into
-a compact set of anatomically interpretable descriptors (Table~\ref{tab:geometric_metrics}).
-We map the raw coordinates to canonical coordinates by removing global translation by centering the vertices and keypoints at the mesh
-centroid and use a fixed 3D coordinate convention with a consistent vertical
-axis before measuremrent. 
+Dense meshes are expressive but too high-dimensional for language-grounded pose analysis.
+We therefore distill each reconstruction into a compact set of anatomically interpretable descriptors (Table~\ref{tab:geometric_metrics}).
+We map the raw coordinates to a canonical frame before measurement.
+Centering the vertices and keypoints at the mesh centroid removes global translation, and a fixed 3D coordinate convention supplies a consistent vertical axis.
 
 \begin{table*}[t]
 \centering
@@ -93,8 +79,7 @@ Base of support and lateral body shift. \\
 \end{table*}
 
 \noindent\textbf{Joint-angle descriptors.}
-For three anatomical keypoints $\mathbf{p}_a$, $\mathbf{p}_b$, and
-$\mathbf{p}_c$, we compute the angle centered at $\mathbf{p}_b$ as
+For three anatomical keypoints $\mathbf{p}_a$, $\mathbf{p}_b$, and $\mathbf{p}_c$, we compute the angle centered at $\mathbf{p}_b$ as
 \begin{equation}
 \theta(a,b,c)=
 \cos^{-1}\!\left(
@@ -104,9 +89,8 @@ $\mathbf{p}_c$, we compute the angle centered at $\mathbf{p}_b$ as
 \right).
 \label{eq:joint_angle}
 \end{equation}
-Knee flexion is measured from the hip--knee--ankle triplet, whereas
-elbow flexion is measured from the shoulder--elbow--wrist triplet. Hip opening
-and shoulder elevation are computed relative to torso-level reference axes.
+Knee flexion is measured from the hip--knee--ankle triplet, whereas elbow flexion is measured from the shoulder--elbow--wrist triplet.
+Hip opening and shoulder elevation are computed relative to torso-level reference axes.
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{fig_dataset.png}
@@ -117,33 +101,24 @@ and shoulder elevation are computed relative to torso-level reference axes.
     \label{fig:dataset_construction}
 \end{figure*}
 \noindent\textbf{Trunk, symmetry, and support descriptors.}
-Trunk measurements are derived from the pelvis--shoulder axis and the
-shoulder--hip and neck--head directions. Bilateral descriptors quantify
-differences between corresponding left and right measurements. Scale-dependent
-quantities stance width, shoulder-height offset, and hip-height offset are
-normalized by the vertical extent of the reconstructed mesh to reduce
-sensitivity to body and reconstruction scale.
+Trunk measurements are derived from the pelvis--shoulder axis and the shoulder--hip and neck--head directions.
+Bilateral descriptors quantify differences between corresponding left and right measurements.
+Scale-dependent quantities (stance width, shoulder-height offset, and hip-height offset) are normalized by the vertical extent of the reconstructed mesh to reduce sensitivity to body and reconstruction scale.
 
 \noindent\textbf{Structured metric records.}
-Each image is paired with a structured record containing the descriptor name,
-anatomical region, numeric value, unit, definition, and discretized
-interpretation state. Fixed thresholds map continuous measurements to
-language-compatible states such as \emph{nearly straight}, \emph{deeply bent},
-\emph{upright}, \emph{rotated}, or \emph{asymmetric}. These states facilitate
-controlled verbalization while the underlying numeric values preserve exact
-supervision. We use the measurements only as reconstruction-derived alignment
-indicators for dataset construction; they are not intended as clinical,
-diagnostic, or rehabilitation measurements.
+Each image is paired with a structured record containing the descriptor name, anatomical region, numeric value, unit, definition, and discretized interpretation state.
+Fixed thresholds map continuous measurements to language-compatible states such as \emph{nearly straight}, \emph{deeply bent}, \emph{upright}, \emph{rotated}, or \emph{asymmetric}.
+These states facilitate controlled verbalization while the underlying numeric values preserve exact supervision.
+We use the measurements only as reconstruction-derived alignment indicators for dataset construction.
+The measurements are not intended as clinical, diagnostic, or rehabilitation measurements.
 
 \subsection{Question--Answer Annotation}
 \label{subsec:qa_generation}
 
-YogaAlign contains two complementary QA sets. The \emph{domain-knowledge}
-set captures pose-level semantic and instructional information that cannot
-be inferred reliably from body geometry alone. The \emph{geometry-grounded}
-set verbalizes image-specific angular evidence extracted from the reconstructed
-body. Table~\ref{tab:qa_annotation_overview} contrasts their evidence sources
-and supervision targets.
+YogaAlign contains two complementary QA sets.
+The \emph{domain-knowledge} set captures pose-level semantic and instructional information that cannot be inferred reliably from body geometry alone.
+The \emph{geometry-grounded} set verbalizes image-specific angular evidence extracted from the reconstructed body.
+Table~\ref{tab:qa_annotation_overview} contrasts their evidence sources and supervision targets.
 
 \begin{table*}[t]
 \centering
@@ -174,31 +149,24 @@ Image-specific measurement selection, comparison, interpretation, and numeric ex
 \label{subsubsec:domain_qa_generation}
 
 \noindent\textbf{Pose-specific knowledge acquisition.}
-For each of the 82 categories, we use Crawl4AI to retrieve and extract text from
-pose-relevant online sources. The collected material is organized into one
-document per asana. We retain information relevant to pose understanding and
-instruction, including execution steps, alignment principles, modifications,
-breathing cues, common mistakes, corrections, benefits, contraindications, and
-precautions. We exclude navigation text, advertisements, author biographies,
-publication metadata, product promotions, and generic marketing language.
+For each of the 82 categories, we use Crawl4AI to retrieve and extract text from pose-relevant online sources.
+The collected material is organized into one document per asana.
+We retain information relevant to pose understanding and instruction, including execution steps, alignment principles, modifications, breathing cues, common mistakes, corrections, benefits, contraindications, and precautions.
+We exclude navigation text, advertisements, author biographies, publication metadata, product promotions, and generic marketing language.
 
 \noindent\textbf{Evidence structuring.}
-Each pose document is divided into 5,000-character chunks with a 500-character
-overlap. Rather than generating QA pairs directly from noisy source text, an
-LLM-based extractor converts each chunk $c_i$ into two complementary evidence
-representations:
+Each pose document is divided into 5,000-character chunks with a 500-character overlap.
+We do not generate QA pairs directly from the noisy source text.
+An LLM-based extractor first converts each chunk $c_i$ into two complementary evidence representations:
 \begin{equation}
 (R_i,B_i)=E_{\phi}(c_i,p),
 \label{eq:domain_extraction}
 \end{equation}
-where $p$ denotes the pose, $R_i$ is a set of compact relational facts, and
-$B_i$ is a set of structured knowledge units. Relational facts encode atomic
-subject--relation--object statements suited to concise factual questions.
-Knowledge units retain multi-step or explanatory content suited to procedural,
-alignment, safety, modification, breathing, sequencing, and correction
-questions. Extraction is restricted to statements explicitly supported by the
-current source chunk. In particular, unsupported claims that a pose cures or
-treats a medical condition are not retained as factual supervision.
+where $p$ denotes the pose, $R_i$ is a set of compact relational facts, and $B_i$ is a set of structured knowledge units.
+Relational facts encode atomic subject--relation--object statements suited to concise factual questions.
+Knowledge units retain multi-step or explanatory content suited to procedural, alignment, safety, modification, breathing, sequencing, and correction questions.
+Extraction is restricted to statements explicitly supported by the current source chunk.
+Unsupported claims that a pose cures or treats a medical condition are not retained as factual supervision.
 
 \begin{table*}[t]
 \centering
@@ -226,20 +194,16 @@ Explanatory, procedural, scenario-based, and teacher-style questions. \\
 \end{table*}
 
 \noindent\textbf{Evidence-conditioned synthesis and deduplication.}
-The QA generator conditions jointly on the source chunk and its extracted
-representations:
+The QA generator conditions jointly on the source chunk and its extracted representations:
 \begin{equation}
 \mathcal{Q}^{\mathrm{dom}}_i=G_{\psi}(c_i,R_i,B_i,p).
 \label{eq:domain_qa}
 \end{equation}
-The generator is instructed to use only the supplied evidence. Compact
-signatures of previously extracted facts, knowledge units, and questions are
-maintained across chunks to suppress semantic repetition. Question families are
-varied across factual, procedural, scenario-based, safety, reverse-lookup,
-correction, and teacher-cue formulations. Each accepted item stores the pose,
-source-chunk identifier, question, answer, QA type, supporting facts, supporting
-knowledge units, and an evidence phrase, enabling provenance tracing from the
-answer to its source evidence.
+We instruct the generator to use only the supplied evidence.
+Compact signatures of previously extracted facts, knowledge units, and questions are maintained across chunks to suppress semantic repetition.
+Question families are varied across factual, procedural, scenario-based, safety, reverse-lookup, correction, and teacher-cue formulations.
+Each accepted item stores the pose, source-chunk identifier, question, answer, QA type, supporting facts, supporting knowledge units, and an evidence phrase.
+Every answer therefore remains traceable to its source evidence.
 
 \begin{table}[t]
 \centering
@@ -267,37 +231,29 @@ Context length & 32,768 tokens \\
 \subsubsection{Geometry-Grounded QA Generation}
 \label{subsubsec:geometry_qa_generation}
 
-The second set is generated directly from the measurements associated with
-an individual image. We restrict this set to degree-valued descriptors,
-which provide interpretable continuous targets. Non-angular normalized
-quantities, including stance width, body-center offset, and shoulder- and
-hip-height differences, remain part of the geometric annotation taxonomy but
-are not used for geometry-QA generation or angle-regression supervision.
+The second set is generated directly from the measurements associated with an individual image.
+We restrict this set to degree-valued descriptors, which provide interpretable continuous targets.
+Non-angular normalized quantities, including stance width, body-center offset, and shoulder- and hip-height differences, remain part of the geometric annotation taxonomy but are not used for geometry-QA generation or angle-regression supervision.
 
 \noindent\textbf{Metric facts and geometry graphs.}
-For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to an
-atomic metric fact
+For image $I$, each valid measurement $m\in\mathcal{M}_I$ is converted to an atomic metric fact
 \begin{equation}
 f_m=(r_m,b_m,n_m,v_m,s_m),
 \label{eq:metric_fact}
 \end{equation}
-where $r_m$ and $b_m$ denote the body region and part, $n_m$ identifies the
-descriptor, $v_m$ is its angular value, and $s_m$ is its discretized
-interpretation state. We organize these facts into a graph
-$\mathcal{G}_I=(\mathcal{V}_I,\mathcal{E}_I)$ containing image, pose, region,
-body-part, metric, and interpretation nodes. Edges encode relations such as
-image--pose, region--body-part, body-part--metric, and metric--interpretation.
-The graph makes the available evidence explicit and supports controlled
-sampling of different reasoning structures.
+where $r_m$ and $b_m$ denote the body region and part, $n_m$ identifies the descriptor, $v_m$ is its angular value, and $s_m$ is its discretized interpretation state.
+We organize these facts into a graph $\mathcal{G}_I=(\mathcal{V}_I,\mathcal{E}_I)$ containing image, pose, region, body-part, metric, and interpretation nodes.
+Edges encode relations such as image--pose, region--body-part, body-part--metric, and metric--interpretation.
+The graph makes the available evidence explicit and supports controlled sampling of different reasoning structures.
 
 \noindent\textbf{Evidence-path construction.}
 We derive five path families from each graph (Table~\ref{tab:geometry_path_types}).
-A path specifies the selected measurements, the intended reasoning behavior,
-and the evidence that must appear in the answer. Direct paths target one
-descriptor; comparison paths pair corresponding left and right descriptors;
-regional paths combine multiple measurements; misconception paths verify a
-proposed condition; and instructor-observation paths verbalize a salient
-measured property.
+A path specifies the selected measurements, the intended reasoning behavior, and the evidence that must appear in the answer.
+Direct paths target one descriptor.
+Comparison paths pair corresponding left and right descriptors.
+Regional paths combine multiple measurements.
+Misconception paths verify a proposed condition.
+Instructor-observation paths verbalize a salient measured property.
 
 \begin{table*}[t]
 \centering
@@ -319,46 +275,38 @@ Instructor observation & A salient metric and severity state & Express a teacher
 \end{tabularx}
 \end{table*}
 
-For knee and elbow comparisons, the smaller interior angle denotes the more
-flexed side; for hip opening and shoulder elevation, the larger value denotes
-the more open or elevated side. These deterministic comparison rules prevent
-the language model from inventing the relation between two numeric values.
+For knee and elbow comparisons, the smaller interior angle denotes the more flexed side.
+For hip opening and shoulder elevation, the larger value denotes the more open or elevated side.
+These deterministic comparison rules prevent the language model from inventing the relation between two numeric values.
 
 \noindent\textbf{Memory-aware sampling and synthesis.}
-We select 3,000 images using balanced-proportional sampling and generate two QA
-records per image. One record emphasizes direct numeric supervision; the other
-is drawn from a higher-order path family. A rolling memory tracks recent path
-types, path identifiers, metric sets, question families, and normalized
-question signatures. Candidate paths are penalized for recent or frequent reuse,
-reducing template collapse and improving coverage across reasoning forms.
+We select 3,000 images using balanced-proportional sampling and generate two QA records per image.
+One record emphasizes direct numeric supervision.
+The other is drawn from a higher-order path family.
+A rolling memory tracks recent path types, path identifiers, metric sets, question families, and normalized question signatures.
+We penalize candidate paths for recent or frequent reuse.
+The penalty reduces template collapse and improves coverage across reasoning forms.
 
-For a selected path $p_k$, the generator receives its evidence $E(p_k)$ and
-recent generation history $h_k$:
+For a selected path $p_k$, the generator receives its evidence $E(p_k)$ and recent generation history $h_k$:
 \begin{equation}
 (q_k,a_k)=G_{\psi}\bigl(p_k,E(p_k),h_k\bigr).
 \label{eq:geometry_qa}
 \end{equation}
-The prompt requires the pose name in the question and every selected angular
-value in the answer. It prohibits internal identifiers and unsupported spatial
-or biomechanical claims. The model therefore verbalizes a predefined evidence
-path rather than inferring unrestricted yoga knowledge.
+The prompt requires the pose name in the question and every selected angular value in the answer.
+It prohibits internal identifiers and unsupported spatial or biomechanical claims.
+The model therefore verbalizes a predefined evidence path rather than inferring unrestricted yoga knowledge.
 
 \noindent\textbf{Validation and numeric targets.}
-We check each candidate QA pair against rule-based criteria for pose-name
-presence, required numeric values, anatomical laterality, prohibited internal
-terms, path-specific constraints, and near-duplicate questions. Failed samples
-are regenerated at most twice, with the violated criteria supplied to the
-generator. If both regenerations fail, we use a deterministic evidence-based
-template. Each accepted record stores
+We check each candidate QA pair against rule-based criteria for pose-name presence, required numeric values, anatomical laterality, prohibited internal terms, path-specific constraints, and near-duplicate questions.
+Failed samples are regenerated at most twice, with the violated criteria supplied to the generator.
+If both regenerations fail, we use a deterministic evidence-based template.
+Each accepted record stores
 \begin{equation}
 \bigl(I,q_k,a_k,p_k,E(p_k),\mathcal{A}_k\bigr),
 \label{eq:geometry_record}
 \end{equation}
-where $\mathcal{A}_k$ contains the metric identity, body part, body region,
-exact value, unit, interpretation, and summary for every supervised angle slot.
-This representation supports both language instruction tuning and continuous
-angle-slot supervision while retaining a traceable link to the underlying
-reconstruction-derived evidence.
+where $\mathcal{A}_k$ contains the metric identity, body part, body region, exact value, unit, interpretation, and summary for every supervised angle slot.
+This representation supports both language instruction tuning and continuous angle-slot supervision while retaining a traceable link to the underlying reconstruction-derived evidence.
 
 \begin{table}[t]
 \centering
@@ -390,12 +338,8 @@ Quality control & Rule validation and deterministic templates \\
 \subsection{Dataset Composition}
 \label{subsec:dataset_composition}
 
-The final YogaAlign corpus contains 10,090 QA records: 4,090 pose-level
-domain-knowledge examples and 6,000 image-specific geometry-grounded examples.
-The geometry set comprises 3,000 direct-angle, 905 comparison, 900 regional-
-summary, 600 misconception, and 595 instructor-observation records. Together,
-the two sets provide complementary supervision. The domain set captures
-what is generally known about an asana, whereas the geometry set describes
-the measured configuration of a particular reconstructed body. This distinction
-is retained throughout training and evaluation so that pose-level knowledge is
-not conflated with image-specific geometric evidence.
+The final YogaAlign corpus contains 4,090 pose-level domain-knowledge examples and 6,000 image-specific geometry-grounded examples, 10,090 QA records in total.
+The geometry set comprises 3,000 direct-angle, 905 comparison, 900 regional-summary, 600 misconception, and 595 instructor-observation records.
+Together, the two sets provide complementary supervision.
+The domain set captures what is generally known about an asana, whereas the geometry set describes the measured configuration of a particular reconstructed body.
+This distinction is retained throughout training and evaluation so that pose-level knowledge is not conflated with image-specific geometric evidence.
