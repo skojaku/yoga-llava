@@ -150,7 +150,16 @@ It does not include 3D body structure, geometric measurements, or language annot
 We recover a 3D body representation from each Yoga-82 image using the pretrained SAM 3D Body model~\cite{yang2026sam3dbody}.
 Given an image $I$, the model predicts an articulated body and surface mesh under the Momentum Human Rig (MHR) representation.
 We retain the predicted mesh vertices and anatomical keypoints required by the subsequent measurement stage.
-Fig.~\ref{fig:sam3d_examples} in Appendix~\ref{app:reconstruction_examples} shows representative reconstructions.
+Fig.~\ref{fig:sam3d_examples} shows representative reconstructions.
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{_ALL_CLASSES_GRID.png}
+    \caption{Representative SAM 3D Body reconstructions for images from
+    Yoga-82. The examples illustrate the diversity of articulated body
+    configurations from which YogaAlign's geometric annotations are derived.}
+    \label{fig:sam3d_examples}
+\end{figure*}
 
 
 We treat the recovered bodies as reconstruction-derived geometric proxies.
@@ -821,20 +830,6 @@ The evaluation covers the geometry-grounded set alone.
 YogaLLaVA V3 reasons over monocular reconstruction-derived measurements and is not a substitute for independently validated biomechanical assessment.
 Future work should evaluate the domain-knowledge set, modality-matched ablations, human-verified geometric references, pose-held-out generalization, and the consistency of generated corrections with expert instruction.
 \appendices
-
-\section{Reconstruction Examples}
-\label{app:reconstruction_examples}
-
-Fig.~\ref{fig:sam3d_examples} shows the reconstructions that the geometric annotations of Sec.~\ref{subsec:geometric_measurements} are derived from.
-
-\begin{figure*}[!t]
-    \centering
-    \includegraphics[width=0.98\textwidth]{_ALL_CLASSES_GRID.png}
-    \caption{Representative SAM 3D Body reconstructions for images from
-    Yoga-82. The examples illustrate the diversity of articulated body
-    configurations from which YogaAlign's geometric annotations are derived.}
-    \label{fig:sam3d_examples}
-\end{figure*}
 
 \section{Annotation Sets and Evidence Representations}
 \label{app:annotation_sets}
