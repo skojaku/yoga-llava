@@ -1,0 +1,181 @@
+\section{Results}
+\label{sec:results}
+
+\subsection{Overall Angle-Slot Regression}
+\label{sec:overall_results}
+
+Table~\ref{tab:overall_results} summarizes teacher-forced regression over 521
+angle slots from 310 held-out geometry-grounded records. YogaLLaVA V3 obtains
+an MAE of $13.98^\circ$ and an RMSE of $21.82^\circ$, with a Pearson
+correlation of 0.913. In addition, 57.01\% and 70.63\% of predictions fall
+within $10^\circ$ and $15^\circ$, respectively, of the reconstruction-derived
+references. These results indicate that the model can identify and express the
+requested measurement from the supplied geometry under a known answer
+structure.
+
+\begin{table}[t]
+    \centering
+    \caption{Teacher-forced angle-slot regression on the held-out test set.
+    Errors are measured against SAM 3D Body-derived pseudo-measurements.}
+    \label{tab:overall_results}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Metric} & \textbf{YogaLLaVA V3} \\
+        \midrule
+        Angle slots & 521 \\
+        RMSE $\downarrow$ & $21.82^\circ$ \\
+        MAE $\downarrow$ & $13.98^\circ$ \\
+        $R^2$ $\uparrow$ & 0.832 \\
+        Pearson $r$ $\uparrow$ & 0.913 \\
+        Within $5^\circ$ $\uparrow$ & 34.36\% \\
+        Within $10^\circ$ $\uparrow$ & 57.01\% \\
+        Within $15^\circ$ $\uparrow$ & 70.63\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Analysis by Question Type}
+\label{sec:path_results}
+
+Table~\ref{tab:path_results} reports performance across the five geometry-QA
+families. Misconception questions achieve the lowest MAE
+($11.28^\circ$) and highest within-$10^\circ$ accuracy (68.75\%), although
+this subset contains only 32 slots. Regional-summary and comparison questions
+also perform favorably despite requiring multiple values or cross-body-part
+relations. Instructor-observation questions are the most challenging, with an
+MAE of $21.08^\circ$ and within-$10^\circ$ accuracy of 25.81\%. Their less
+explicit teacher-style formulations may make descriptor selection more
+ambiguous, although the present experiment does not isolate this factor.
+
+\begin{table}[t]
+    \centering
+    \caption{Teacher-forced regression by geometry-QA type.}
+    \label{tab:path_results}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrrrr}
+        \toprule
+        \textbf{Question Type} & \textbf{Slots} &
+        \textbf{RMSE $\downarrow$} & \textbf{MAE $\downarrow$} &
+        \textbf{$R^2$ $\uparrow$} & \textbf{$\leq10^\circ$ $\uparrow$} \\
+        \midrule
+        Comparison & 106 & $21.53^\circ$ & $12.95^\circ$ & 0.791 & 62.26\% \\
+        Direct angle & 155 & $22.65^\circ$ & $15.22^\circ$ & 0.821 & 51.61\% \\
+        Instructor observation & 31 & $28.69^\circ$ & $21.08^\circ$ & 0.054 & 25.81\% \\
+        Misconception & 32 & $17.10^\circ$ & $11.28^\circ$ & 0.877 & 68.75\% \\
+        Region summary & 197 & $20.72^\circ$ & $12.88^\circ$ & 0.847 & 61.42\% \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+\subsection{Analysis by Geometric Descriptor}
+\label{sec:metric_results}
+
+Among descriptors with substantial test support, trunk twist yields the lowest
+MAE ($6.84^\circ$), followed by lateral trunk bend, trunk tilt, and right
+shoulder elevation (Table~\ref{tab:metric_results}). Left shoulder elevation is
+the most difficult descriptor, followed by elbow flexion and right hip opening.
+These differences may arise from descriptor-specific distributions,
+reconstruction uncertainty, occlusion, or left--right ambiguity; identifying
+their individual effects requires further controlled analysis.
+
+The symmetry categories contain only three or four slots and should not be used
+to draw broad conclusions. Hip symmetry is additionally distinct because no
+dedicated hip-symmetry token is included in the 14-descriptor input vocabulary;
+its three test targets therefore cannot be retrieved from a corresponding
+independent input token.
+
+\begin{table}[t]
+    \centering
+    \caption{Teacher-forced regression by target descriptor.}
+    \label{tab:metric_results}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Descriptor} & \textbf{Slots} &
+        \textbf{RMSE $\downarrow$} & \textbf{MAE $\downarrow$} \\
+        \midrule
+        Knee symmetry & 4 & $3.23^\circ$ & $2.68^\circ$ \\
+        Elbow symmetry & 4 & $6.90^\circ$ & $5.53^\circ$ \\
+        Hip symmetry & 3 & $10.18^\circ$ & $7.82^\circ$ \\
+        Trunk twist & 33 & $11.02^\circ$ & $6.84^\circ$ \\
+        Lateral trunk bend & 38 & $14.92^\circ$ & $9.24^\circ$ \\
+        Right shoulder elevation & 34 & $14.82^\circ$ & $9.89^\circ$ \\
+        Trunk tilt & 34 & $15.48^\circ$ & $9.50^\circ$ \\
+        Neck alignment & 37 & $17.34^\circ$ & $12.75^\circ$ \\
+        Left hip opening & 48 & $18.40^\circ$ & $13.28^\circ$ \\
+        Right knee flexion & 51 & $22.55^\circ$ & $12.09^\circ$ \\
+        Left knee flexion & 47 & $23.66^\circ$ & $15.56^\circ$ \\
+        Right elbow flexion & 50 & $24.80^\circ$ & $18.39^\circ$ \\
+        Right hip opening & 48 & $25.41^\circ$ & $17.36^\circ$ \\
+        Left elbow flexion & 47 & $27.77^\circ$ & $18.46^\circ$ \\
+        Left shoulder elevation & 43 & $31.22^\circ$ & $21.23^\circ$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+\subsection{Autoregressive Generation}
+\label{sec:generation_comparison}
+
+Table~\ref{tab:generation_results} evaluates complete free-running generation.
+YogaLLaVA V3 emits the correct number of numeric values for 267 of 310 records
+(86.1\%), compared with 66.1\% for LLaVA-1.5-7B and 68.1\% for
+Qwen2.5-VL-7B. Thus, the proposed model is more reliable at determining when
+and how many continuous outputs are required.
+
+For numeric comparison, we use the 160-record common-success subset on which
+all three models produce the correct slot count. YogaLLaVA V3 achieves a
+slot-level MAE of $17.65^\circ$, substantially below LLaVA
+($42.80^\circ$) and Qwen ($46.91^\circ$). Its record-level macro MAE is
+$16.98^\circ$ with a 95\% bootstrap confidence interval of
+$[14.15,20.17]^\circ$. The corresponding intervals are
+$[37.33,46.41]^\circ$ for LLaVA and $[41.59,53.87]^\circ$ for Qwen.
+Paired bootstrap differences relative to YogaLLaVA are
+$24.85^\circ$ ($[19.45,30.35]^\circ$) for LLaVA and
+$30.64^\circ$ ($[23.70,37.83]^\circ$) for Qwen.
+
+\begin{table}[t]
+    \centering
+    \caption{Autoregressive generation on 310 test records. Slot accuracy is
+    measured on the full test set; numeric errors use the 160-record
+    common-success subset.}
+    \label{tab:generation_results}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Model} & \textbf{Slot Match $\uparrow$} &
+        \textbf{MAE $\downarrow$} & \textbf{RMSE $\downarrow$} \\
+        \midrule
+        YogaLLaVA V3 & 267/310 (86.1\%) & $17.65^\circ$ & $27.23^\circ$ \\
+        LLaVA-1.5-7B & 205/310 (66.1\%) & $42.80^\circ$ & $52.59^\circ$ \\
+        Qwen2.5-VL-7B & 211/310 (68.1\%) & $46.91^\circ$ & $61.12^\circ$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+This comparison evaluates complete systems rather than isolating a single
+architectural factor. YogaLLaVA V3 receives structured geometry and
+task-specific instruction tuning, whereas the baselines are image-only and
+zero-shot. The observed advantage therefore reflects the combined effect of
+geometry conditioning, domain adaptation, and continuous angle regression; it
+should not be interpreted as a modality-matched ablation.
+
+\subsection{Discussion and Limitations}
+\label{sec:result_interpretation}
+
+The teacher-forced and autoregressive evaluations characterize complementary
+capabilities. The former measures continuous prediction at known answer slots,
+whereas the latter additionally requires the model to decide whether a numeric
+slot is needed, emit and order the correct number of slots, preserve consistency
+between numbers and language, and terminate appropriately. Reporting them
+separately avoids conflating regression accuracy with complete generation
+quality.
+
+The current evidence supports geometry-conditioned measurement selection and
+expression, but not independent image-only recovery of physical joint angles.
+The references inherit uncertainty from monocular reconstruction, including
+viewpoint, occlusion, foreshortening, clothing, inversion, depth, and
+left--right ambiguities. They should therefore not be interpreted as clinical,
+diagnostic, rehabilitation, motion-capture, or manually verified biomechanical
+ground truth. Finally, the experiments do not isolate modality contributions
+through ablation and do not test generalization to unseen yoga-pose categories;
+both remain important directions for future evaluation.

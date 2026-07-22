@@ -1,0 +1,107 @@
+\section{Experiments}
+\label{sec:experimental_setup}
+
+\subsection{Data Splits}
+\label{sec:dataset_splits}
+
+We evaluate YogaLLaVA V3 on the combined domain-knowledge and
+geometry-grounded QA corpus introduced in Sec.~\ref{sec:dataset}. The fixed
+splits contain 10,090 records and 10,177 supervised angle slots
+(Table~\ref{tab:dataset_splits}). The geometry-grounded subset is constructed
+from 3,000 images, with two QA records per image, and comprises 3,000
+direct-angle, 905 comparison, 900 regional-summary, 600 misconception, and 595
+instructor-observation examples. Test images are excluded from training, while
+pose categories are shared across splits. The resulting protocol evaluates
+generalization to unseen images of known asanas rather than to unseen pose
+categories.
+
+\begin{table}[t]
+    \centering
+    \caption{Composition of the instruction-tuning corpus.}
+    \label{tab:dataset_splits}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Split} &
+        \textbf{Geometry QA} &
+        \textbf{Domain QA} &
+        \textbf{Total} &
+        \textbf{Angle Slots} \\
+        \midrule
+        Train      & 5,396 & 3,690 & 9,086 & 9,163 \\
+        Validation &   294 &   200 &   494 &   493 \\
+        Test       &   310 &   200 &   510 &   521 \\
+        \midrule
+        Total      & 6,000 & 4,090 & 10,090 & 10,177 \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+\subsection{Implementation Details}
+\label{sec:implementation_details}
+
+YogaLLaVA V3 is initialized from LLaVA-1.5-7B. Its CLIP ViT-L/14-336
+image encoder operates at $336\!\times\!336$ resolution, and the multimodal
+projector maps the visual features to the 4,096-dimensional language space.
+The maximum sequence length is 1,280 tokens. Both the vision encoder and
+multimodal projector remain frozen; the language decoder is adapted using the
+LoRA settings described in Sec.~\ref{sec:training_objective}, together
+with the proposed geometry and angle modules.
+
+We train for 12 epochs using AdamW with weight decay 0.01 and gradient clipping
+at 1.0. A per-device batch size of four and eight-step gradient accumulation
+produce an effective batch size of 32. We use a cosine learning-rate schedule
+with linear warm-up over the first 3\% of optimizer updates. The learning rates
+are $1.5\!\times\!10^{-4}$ for LoRA parameters,
+$2\!\times\!10^{-5}$ for the trainable input and output embeddings, and
+$1\!\times\!10^{-4}$ for the geometry encoder, angle-feedback encoder, angle
+embedding, and regression head. The pretrained backbone is loaded in bfloat16,
+whereas the added numeric modules are kept in float32. Training is
+performed on one NVIDIA RTX A6000 GPU with fixed Python, NumPy, PyTorch, and
+CUDA seeds.
+
+We evaluate the model after every epoch and select the checkpoint with the
+lowest teacher-forced validation angle RMSE. The selected checkpoint obtains a
+validation RMSE of $19.83^\circ$, MAE of $12.63^\circ$, and $R^2$ of 0.874.
+We report only the selected checkpoint because intermediate epoch-wise values
+are optimization diagnostics rather than comparative experimental results.
+
+\subsection{Evaluation Protocol}
+\label{sec:evaluation_protocol}
+
+\noindent\textbf{Teacher-forced angle regression.}
+Our primary numeric evaluation supplies the reference answer structure,
+including the number, positions, and ordering of \texttt{<ANGLE>} tokens, and
+evaluates the continuous prediction at each known slot. Given $N$ reference
+angles $\theta_i$ and predictions $\widehat{\theta}_i$, we report MAE, RMSE,
+$R^2$, Pearson correlation, and the fractions of predictions within
+$5^\circ$, $10^\circ$, and $15^\circ$ of the references:
+\begin{equation}
+\operatorname{MAE}=\frac{1}{N}\sum_{i=1}^{N}
+\left|\widehat{\theta}_i-\theta_i\right|,
+\qquad
+\operatorname{RMSE}=\sqrt{\frac{1}{N}\sum_{i=1}^{N}
+(\widehat{\theta}_i-\theta_i)^2}.
+\label{eq:evaluation_errors}
+\end{equation}
+Teacher forcing isolates continuous prediction given the correct linguistic
+slot structure; it does not evaluate whether the model can autonomously emit,
+order, and contextualize the required slots.
+
+\noindent\textbf{Autoregressive generation.}
+We therefore additionally evaluate free-running generation on all 310
+geometry-grounded test records. YogaLLaVA V3 receives the image, question, and
+structured geometry. LLaVA-1.5-7B and Qwen2.5-VL-7B-Instruct~\cite{bai2025qwen25vl} are evaluated
+zero-shot using only the image and question; the questions specify the target
+metrics and their expected order but do not reveal numeric values. We report
+(i) slot-count accuracy over the complete test set and (ii) numeric error on
+the common-success subset for which all models generate the correct number of
+values. This distinction avoids directly comparing numeric errors computed on
+different model-specific subsets.
+
+All numeric references are pseudo-measurements derived from SAM 3D Body rather
+than motion capture or manually verified biomechanical annotations. Moreover,
+518 of the 521 teacher-forced test targets are present in the structured
+geometry input. The primary evaluation therefore measures question-conditioned
+descriptor selection, slot filling, reproduction, and linguistic expression, not
+independent physical angle recovery from RGB images.

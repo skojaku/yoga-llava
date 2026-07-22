@@ -1,0 +1,17 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced YogaAlign, a geometry-grounded extension of Yoga-82, and
+YogaLLaVA V3, a vision--language model that integrates structured body
+measurements with continuous angle-aware generation. YogaAlign combines
+pose-level domain knowledge with image-specific QA derived from explicit
+reconstruction-based evidence paths. YogaLLaVA V3 represents these measurements
+as metric-aware geometry tokens and predicts continuous values at dedicated
+angle slots. The experiments demonstrate reliable question-conditioned
+selection and expression of supplied geometry under both teacher-forced and
+autoregressive evaluation. They also define the present scope clearly: the
+system reasons over monocular reconstruction-derived measurements and is not a
+substitute for independently validated biomechanical assessment. Future work
+should evaluate modality-matched ablations, human-verified geometric references,
+pose-held-out generalization, and the consistency of generated corrections with
+expert instruction.
