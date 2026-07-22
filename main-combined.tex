@@ -764,7 +764,8 @@ These results indicate that the model can identify and express the requested mea
 
 Two reference points bound this result.
 A constant predictor at the test mean attains an $R^2$ of 0 by construction.
-The reported $R^2$ and RMSE imply a target standard deviation of $53.24^\circ$, the RMSE of that predictor, against which YogaLLaVA V3 reduces RMSE by 59\%.
+The reported $R^2$ and RMSE imply a target standard deviation of $53.24^\circ$, which is that predictor's RMSE.
+YogaLLaVA V3 reduces RMSE by 59\% against this anchor.
 At the other end, 518 of the 521 targets are supplied among the geometry tokens (Sec.~\ref{sec:evaluation_protocol}).
 An oracle that selects the correct descriptor and copies its value therefore attains an MAE of $0^\circ$ and an $R^2$ of 1 on those slots.
 The distance from that upper bound measures how often the model selects the wrong descriptor or fails to reproduce a value it was given.
@@ -939,7 +940,8 @@ YogaAlign combines pose-level domain knowledge with image-specific QA derived fr
 YogaLLaVA V3 represents these measurements as metric-aware geometry tokens and predicts continuous values at angle slots.
 The experiments demonstrate reliable question-conditioned selection and expression of supplied geometry under both teacher-forced and autoregressive evaluation.
 They also define the present scope.
-The evaluation covers the geometry-grounded set, and YogaLLaVA V3 reasons over monocular reconstruction-derived measurements without substituting for independently validated biomechanical assessment.
+The evaluation covers the geometry-grounded set alone.
+YogaLLaVA V3 reasons over monocular reconstruction-derived measurements and is not a substitute for independently validated biomechanical assessment.
 Future work should evaluate the domain-knowledge set, modality-matched ablations, human-verified geometric references, pose-held-out generalization, and the consistency of generated corrections with expert instruction.
 \appendices
 
