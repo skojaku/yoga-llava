@@ -4,8 +4,10 @@
 \subsection{Data Splits}
 \label{sec:dataset_splits}
 
-We evaluate YogaLLaVA V3 on the combined domain-knowledge and geometry-grounded QA corpus introduced in Sec.~\ref{sec:dataset}.
+We train YogaLLaVA V3 on the combined domain-knowledge and geometry-grounded QA corpus introduced in Sec.~\ref{sec:dataset}.
 The fixed splits contain 10,090 records and 10,177 supervised angle slots (Table~\ref{tab:dataset_splits}).
+All evaluation below uses the geometry-grounded records.
+The 200 held-out domain-knowledge records are reserved for future work, and we report no result on them.
 The geometry-grounded subset is constructed from 3,000 images, with two QA records per image, and comprises 3,000 direct-angle, 905 comparison, 900 regional-summary, 600 misconception, and 595 instructor-observation examples.
 Test images are excluded from training, while pose categories are shared across splits.
 The resulting protocol evaluates generalization to unseen images of known asanas.

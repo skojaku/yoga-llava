@@ -92,6 +92,8 @@ We make three contributions.
     \item We develop a two-part annotation procedure that combines evidence-conditioned yoga-domain knowledge with image-specific geometric measurements, exact angular targets, rule-based validation, and traceable provenance.
     \item We build \textbf{YogaLLaVA V3} on YogaAlign, integrating metric-aware geometry tokens, continuous angle-slot regression over descriptors supplied through those tokens, and scalar feedback into a vision--language decoder, and evaluate both teacher-forced angle regression and free-running generation.
 \end{itemize}
+Our experiments cover the geometry-grounded set alone.
+The domain-knowledge set is released as a training and evaluation resource, and we report no model performance on it.
 \section{Related Work}
 \label{sec:related}
 
@@ -666,8 +668,10 @@ The two interact through the slot-placement and continuous-value feedback mechan
 \subsection{Data Splits}
 \label{sec:dataset_splits}
 
-We evaluate YogaLLaVA V3 on the combined domain-knowledge and geometry-grounded QA corpus introduced in Sec.~\ref{sec:dataset}.
+We train YogaLLaVA V3 on the combined domain-knowledge and geometry-grounded QA corpus introduced in Sec.~\ref{sec:dataset}.
 The fixed splits contain 10,090 records and 10,177 supervised angle slots (Table~\ref{tab:dataset_splits}).
+All evaluation below uses the geometry-grounded records.
+The 200 held-out domain-knowledge records are reserved for future work, and we report no result on them.
 The geometry-grounded subset is constructed from 3,000 images, with two QA records per image, and comprises 3,000 direct-angle, 905 comparison, 900 regional-summary, 600 misconception, and 595 instructor-observation examples.
 Test images are excluded from training, while pose categories are shared across splits.
 The resulting protocol evaluates generalization to unseen images of known asanas.
@@ -911,15 +915,22 @@ Reporting them separately avoids conflating regression accuracy with generation 
 
 The current evidence supports geometry-conditioned measurement selection and expression.
 The references inherit uncertainty from monocular reconstruction, including viewpoint, occlusion, foreshortening, clothing, inversion, depth, and left--right ambiguities.
-The references should therefore not be interpreted as clinical, diagnostic, rehabilitation, motion-capture, or manually verified biomechanical ground truth.
+SAM 3D Body reports a mean per-joint position error of $54.8$~mm on 3DPW~\cite{yang2026sam3dbody}.
+That figure is positional and does not convert to an angular tolerance.
+No joint-angle error is published for the reconstruction, and we therefore cannot separate the share of the reported $13.98^\circ$ MAE that originates in the references themselves.
+The references should not be interpreted as clinical, diagnostic, rehabilitation, motion-capture, or manually verified biomechanical ground truth.
 
 The misconception and instructor-observation families place a further limitation on the present scope.
 Both train the model to issue corrective, teacher-style judgments, and their supervision comes from the same measurements we decline to certify as clinically meaningful.
 We have not checked the resulting corrections against expert instruction.
 The generated judgments are therefore unvalidated as instructional advice.
 
+The domain-knowledge set carries a separate caveat.
+It supplies 4,090 of the 10,090 records and takes part in training, yet no experiment here measures whether the model answers questions about benefits, contraindications, or alignment cues correctly.
+We therefore claim it as an annotation resource and make no accuracy claim for pose-level knowledge.
+
 Finally, the experiments do not isolate modality contributions through ablation and do not test generalization to unseen yoga-pose categories.
-Both remain directions for future evaluation.
+These gaps, together with domain-knowledge evaluation, remain directions for future work.
 \section{Conclusion}
 \label{sec:conclusion}
 
@@ -928,8 +939,8 @@ YogaAlign combines pose-level domain knowledge with image-specific QA derived fr
 YogaLLaVA V3 represents these measurements as metric-aware geometry tokens and predicts continuous values at angle slots.
 The experiments demonstrate reliable question-conditioned selection and expression of supplied geometry under both teacher-forced and autoregressive evaluation.
 They also define the present scope.
-YogaLLaVA V3 reasons over monocular reconstruction-derived measurements and is not a substitute for independently validated biomechanical assessment.
-Future work should evaluate modality-matched ablations, human-verified geometric references, pose-held-out generalization, and the consistency of generated corrections with expert instruction.
+The evaluation covers the geometry-grounded set, and YogaLLaVA V3 reasons over monocular reconstruction-derived measurements without substituting for independently validated biomechanical assessment.
+Future work should evaluate the domain-knowledge set, modality-matched ablations, human-verified geometric references, pose-held-out generalization, and the consistency of generated corrections with expert instruction.
 \appendices
 
 \section{Annotation Generation Settings}

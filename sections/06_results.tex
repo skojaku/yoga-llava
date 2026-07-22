@@ -163,12 +163,19 @@ Reporting them separately avoids conflating regression accuracy with generation 
 
 The current evidence supports geometry-conditioned measurement selection and expression.
 The references inherit uncertainty from monocular reconstruction, including viewpoint, occlusion, foreshortening, clothing, inversion, depth, and left--right ambiguities.
-The references should therefore not be interpreted as clinical, diagnostic, rehabilitation, motion-capture, or manually verified biomechanical ground truth.
+SAM 3D Body reports a mean per-joint position error of $54.8$~mm on 3DPW~\cite{yang2026sam3dbody}.
+That figure is positional and does not convert to an angular tolerance.
+No joint-angle error is published for the reconstruction, and we therefore cannot separate the share of the reported $13.98^\circ$ MAE that originates in the references themselves.
+The references should not be interpreted as clinical, diagnostic, rehabilitation, motion-capture, or manually verified biomechanical ground truth.
 
 The misconception and instructor-observation families place a further limitation on the present scope.
 Both train the model to issue corrective, teacher-style judgments, and their supervision comes from the same measurements we decline to certify as clinically meaningful.
 We have not checked the resulting corrections against expert instruction.
 The generated judgments are therefore unvalidated as instructional advice.
 
+The domain-knowledge set carries a separate caveat.
+It supplies 4,090 of the 10,090 records and takes part in training, yet no experiment here measures whether the model answers questions about benefits, contraindications, or alignment cues correctly.
+We therefore claim it as an annotation resource and make no accuracy claim for pose-level knowledge.
+
 Finally, the experiments do not isolate modality contributions through ablation and do not test generalization to unseen yoga-pose categories.
-Both remain directions for future evaluation.
+These gaps, together with domain-knowledge evaluation, remain directions for future work.
