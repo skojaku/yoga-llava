@@ -1,5 +1,75 @@
 \appendices
 
+\section{Reconstruction Examples}
+\label{app:reconstruction_examples}
+
+Fig.~\ref{fig:sam3d_examples} shows the reconstructions that the geometric annotations of Sec.~\ref{subsec:geometric_measurements} are derived from.
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{_ALL_CLASSES_GRID.png}
+    \caption{Representative SAM 3D Body reconstructions for images from
+    Yoga-82. The examples illustrate the diversity of articulated body
+    configurations from which YogaAlign's geometric annotations are derived.}
+    \label{fig:sam3d_examples}
+\end{figure*}
+
+\section{Annotation Sets and Evidence Representations}
+\label{app:annotation_sets}
+
+Table~\ref{tab:qa_annotation_overview} contrasts the evidence sources and supervision targets of the two QA sets.
+Table~\ref{tab:domain_knowledge_representation} describes the two intermediate representations that the domain-knowledge generator conditions on.
+
+\begin{table*}[t]
+\centering
+\caption{Complementary QA annotation sets in YogaAlign.}
+\label{tab:qa_annotation_overview}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{0.19\textwidth} L{0.26\textwidth} L{0.30\textwidth} X}
+\toprule
+\textbf{QA set} & \textbf{Primary evidence} & \textbf{Question scope} & \textbf{Supervision target} \\
+\midrule
+Domain knowledge &
+Pose-specific text collected from online yoga sources &
+Identity, benefits, contraindications, precautions, procedures, alignment cues,
+modifications, breathing, mistakes, corrections, and sequencing &
+Pose-level semantic and instructional reasoning. \\
+Geometry grounded &
+Degree-valued measurements extracted for an individual image &
+Joint flexion, hip opening, shoulder elevation, trunk configuration, angular
+symmetry, regional summaries, and measured-condition verification &
+Image-specific measurement selection, comparison, interpretation, and numeric expression. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{Intermediate evidence representations for domain-knowledge QA generation.}
+\label{tab:domain_knowledge_representation}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{0.21\textwidth} L{0.27\textwidth} L{0.28\textwidth} X}
+\toprule
+\textbf{Representation} & \textbf{Role} & \textbf{Typical content} & \textbf{Supported QA form} \\
+\midrule
+Relational facts &
+Single-fact, evidence-backed statements &
+Names, difficulty, benefits, contraindications, precautions, props, muscles,
+modifications, and related poses &
+Concise factual and reverse-lookup questions. \\
+Structured knowledge units &
+Multi-sentence or multi-step evidence &
+Procedures, alignment, safety, modifications, mistakes, corrections, breathing,
+sequencing, and teaching cues &
+Explanatory, procedural, scenario-based, and teacher-style questions. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
 \section{Annotation Generation Settings}
 \label{app:generation_settings}
 
@@ -55,4 +125,61 @@ Diversity control & Rolling memory and family rotation \\
 Quality control & Rule validation and deterministic templates \\
 \bottomrule
 \end{tabular}
+\end{table}
+
+\section{Additional Regression Results}
+\label{app:additional_results}
+
+Table~\ref{tab:overall_results} lists the full metric set for the teacher-forced evaluation of Sec.~\ref{sec:overall_results}.
+Table~\ref{tab:metric_results} breaks the same slots down by target descriptor.
+Ten of the fifteen descriptors carry more than thirty slots, and the three symmetry rows carry three or four.
+
+\begin{table}[h]
+    \centering
+    \caption{Teacher-forced angle-slot regression on the held-out test set.
+    Errors are measured against SAM 3D Body-derived pseudo-measurements.}
+    \label{tab:overall_results}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Metric} & \textbf{YogaLLaVA V3} \\
+        \midrule
+        Angle slots & 521 \\
+        RMSE $\downarrow$ & $21.82^\circ$ \\
+        MAE $\downarrow$ & $13.98^\circ$ \\
+        $R^2$ $\uparrow$ & 0.832 \\
+        Pearson $r$ $\uparrow$ & 0.913 \\
+        Within $5^\circ$ $\uparrow$ & 34.36\% \\
+        Within $10^\circ$ $\uparrow$ & 57.01\% \\
+        Within $15^\circ$ $\uparrow$ & 70.63\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[h]
+    \centering
+    \caption{Teacher-forced regression by target descriptor.}
+    \label{tab:metric_results}
+    \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Descriptor} & \textbf{Slots} &
+        \textbf{RMSE $\downarrow$} & \textbf{MAE $\downarrow$} \\
+        \midrule
+        Knee symmetry & 4 & $3.23^\circ$ & $2.68^\circ$ \\
+        Elbow symmetry & 4 & $6.90^\circ$ & $5.53^\circ$ \\
+        Hip symmetry & 3 & $10.18^\circ$ & $7.82^\circ$ \\
+        Trunk twist & 33 & $11.02^\circ$ & $6.84^\circ$ \\
+        Lateral trunk bend & 38 & $14.92^\circ$ & $9.24^\circ$ \\
+        Right shoulder elevation & 34 & $14.82^\circ$ & $9.89^\circ$ \\
+        Trunk tilt & 34 & $15.48^\circ$ & $9.50^\circ$ \\
+        Neck alignment & 37 & $17.34^\circ$ & $12.75^\circ$ \\
+        Left hip opening & 48 & $18.40^\circ$ & $13.28^\circ$ \\
+        Right knee flexion & 51 & $22.55^\circ$ & $12.09^\circ$ \\
+        Left knee flexion & 47 & $23.66^\circ$ & $15.56^\circ$ \\
+        Right elbow flexion & 50 & $24.80^\circ$ & $18.39^\circ$ \\
+        Right hip opening & 48 & $25.41^\circ$ & $17.36^\circ$ \\
+        Left elbow flexion & 47 & $27.77^\circ$ & $18.46^\circ$ \\
+        Left shoulder elevation & 43 & $31.22^\circ$ & $21.23^\circ$ \\
+        \bottomrule
+    \end{tabular}}
 \end{table}

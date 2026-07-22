@@ -4,10 +4,11 @@
 \subsection{Overall Angle-Slot Regression}
 \label{sec:overall_results}
 
-Table~\ref{tab:overall_results} summarizes teacher-forced regression over 521 angle slots from 310 held-out geometry-grounded records.
+Teacher-forced regression covers 521 angle slots from 310 held-out geometry-grounded records.
 YogaLLaVA V3 obtains an MAE of $13.98^\circ$ and an RMSE of $21.82^\circ$, with a Pearson correlation of 0.913.
 The test $R^2$ is 0.832 and differs from the validation $R^2$ of 0.874 used for checkpoint selection (Sec.~\ref{sec:implementation_details}).
 In addition, 57.01\% and 70.63\% of predictions fall within $10^\circ$ and $15^\circ$, respectively, of the reconstruction-derived references.
+Table~\ref{tab:overall_results} in Appendix~\ref{app:additional_results} lists the full metric set.
 These results indicate that the model can identify and express the requested measurement from the supplied geometry under a known answer structure.
 
 Two reference points bound this result.
@@ -18,26 +19,6 @@ At the other end, 518 of the 521 targets are supplied among the geometry tokens 
 An oracle that selects the correct descriptor and copies its value therefore attains an MAE of $0^\circ$ and an $R^2$ of 1 on those slots.
 The distance from that upper bound measures how often the model selects the wrong descriptor or fails to reproduce a value it was given.
 
-\begin{table}[t]
-    \centering
-    \caption{Teacher-forced angle-slot regression on the held-out test set.
-    Errors are measured against SAM 3D Body-derived pseudo-measurements.}
-    \label{tab:overall_results}
-    \begin{tabular}{lr}
-        \toprule
-        \textbf{Metric} & \textbf{YogaLLaVA V3} \\
-        \midrule
-        Angle slots & 521 \\
-        RMSE $\downarrow$ & $21.82^\circ$ \\
-        MAE $\downarrow$ & $13.98^\circ$ \\
-        $R^2$ $\uparrow$ & 0.832 \\
-        Pearson $r$ $\uparrow$ & 0.913 \\
-        Within $5^\circ$ $\uparrow$ & 34.36\% \\
-        Within $10^\circ$ $\uparrow$ & 57.01\% \\
-        Within $15^\circ$ $\uparrow$ & 70.63\% \\
-        \bottomrule
-    \end{tabular}
-\end{table}
 
 \subsection{Analysis by Question Type}
 \label{sec:path_results}
@@ -73,7 +54,7 @@ Their less explicit teacher-style formulations may make descriptor selection mor
 \subsection{Analysis by Geometric Descriptor}
 \label{sec:metric_results}
 
-Among descriptors with substantial test support, trunk twist yields the lowest MAE ($6.84^\circ$), followed by lateral trunk bend, trunk tilt, and right shoulder elevation (Table~\ref{tab:metric_results}).
+Among descriptors with substantial test support, trunk twist yields the lowest MAE ($6.84^\circ$), followed by lateral trunk bend, trunk tilt, and right shoulder elevation (Table~\ref{tab:metric_results} in Appendix~\ref{app:additional_results}).
 Left shoulder elevation is the most difficult descriptor, followed by elbow flexion and right hip opening.
 These differences may arise from descriptor-specific distributions, reconstruction uncertainty, occlusion, or left--right ambiguity.
 Identifying their individual effects requires further controlled analysis.
@@ -84,34 +65,6 @@ Its three test targets therefore cannot be retrieved from a corresponding indepe
 Despite the missing token, hip symmetry reaches an MAE of $7.82^\circ$, lower than several descriptors with dedicated input tokens and far larger test support.
 Under a retrieval-based reading of the regression, this direction is counterintuitive, and we note it as an open question given the three-slot sample.
 
-\begin{table}[t]
-    \centering
-    \caption{Teacher-forced regression by target descriptor.}
-    \label{tab:metric_results}
-    \resizebox{\columnwidth}{!}{
-    \begin{tabular}{lrrr}
-        \toprule
-        \textbf{Descriptor} & \textbf{Slots} &
-        \textbf{RMSE $\downarrow$} & \textbf{MAE $\downarrow$} \\
-        \midrule
-        Knee symmetry & 4 & $3.23^\circ$ & $2.68^\circ$ \\
-        Elbow symmetry & 4 & $6.90^\circ$ & $5.53^\circ$ \\
-        Hip symmetry & 3 & $10.18^\circ$ & $7.82^\circ$ \\
-        Trunk twist & 33 & $11.02^\circ$ & $6.84^\circ$ \\
-        Lateral trunk bend & 38 & $14.92^\circ$ & $9.24^\circ$ \\
-        Right shoulder elevation & 34 & $14.82^\circ$ & $9.89^\circ$ \\
-        Trunk tilt & 34 & $15.48^\circ$ & $9.50^\circ$ \\
-        Neck alignment & 37 & $17.34^\circ$ & $12.75^\circ$ \\
-        Left hip opening & 48 & $18.40^\circ$ & $13.28^\circ$ \\
-        Right knee flexion & 51 & $22.55^\circ$ & $12.09^\circ$ \\
-        Left knee flexion & 47 & $23.66^\circ$ & $15.56^\circ$ \\
-        Right elbow flexion & 50 & $24.80^\circ$ & $18.39^\circ$ \\
-        Right hip opening & 48 & $25.41^\circ$ & $17.36^\circ$ \\
-        Left elbow flexion & 47 & $27.77^\circ$ & $18.46^\circ$ \\
-        Left shoulder elevation & 43 & $31.22^\circ$ & $21.23^\circ$ \\
-        \bottomrule
-    \end{tabular}}
-\end{table}
 
 \subsection{Autoregressive Generation}
 \label{sec:generation_comparison}

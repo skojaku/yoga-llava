@@ -20,16 +20,9 @@ It does not include 3D body structure, geometric measurements, or language annot
 \noindent\textbf{Monocular body reconstruction.}
 We recover a 3D body representation from each Yoga-82 image using the pretrained SAM 3D Body model~\cite{yang2026sam3dbody}.
 Given an image $I$, the model predicts an articulated body and surface mesh under the Momentum Human Rig (MHR) representation.
-We retain the predicted mesh vertices and anatomical keypoints required by the subsequent measurement stage (Fig.~\ref{fig:sam3d_examples}).
+We retain the predicted mesh vertices and anatomical keypoints required by the subsequent measurement stage.
+Fig.~\ref{fig:sam3d_examples} in Appendix~\ref{app:reconstruction_examples} shows representative reconstructions.
 
-\begin{figure*}[!t]
-    \centering
-    \includegraphics[width=0.98\textwidth]{_ALL_CLASSES_GRID.png}
-    \caption{Representative SAM 3D Body reconstructions for images from
-    Yoga-82. The examples illustrate the diversity of articulated body
-    configurations from which YogaAlign's geometric annotations are derived.}
-    \label{fig:sam3d_examples}
-\end{figure*}
 
 We treat the recovered bodies as reconstruction-derived geometric proxies.
 The reconstructions are not motion capture or manually verified biomechanical ground truth.
@@ -118,32 +111,8 @@ The measurements are not intended as clinical, diagnostic, or rehabilitation mea
 YogaAlign contains two complementary QA sets.
 The \emph{domain-knowledge} set captures pose-level semantic and instructional information that cannot be inferred reliably from body geometry alone.
 The \emph{geometry-grounded} set expresses image-specific angular evidence extracted from the reconstructed body.
-Table~\ref{tab:qa_annotation_overview} contrasts their evidence sources and supervision targets.
+Table~\ref{tab:qa_annotation_overview} in Appendix~\ref{app:annotation_sets} contrasts their evidence sources and supervision targets.
 
-\begin{table*}[t]
-\centering
-\caption{Complementary QA annotation sets in YogaAlign.}
-\label{tab:qa_annotation_overview}
-\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\textwidth}{L{0.19\textwidth} L{0.26\textwidth} L{0.30\textwidth} X}
-\toprule
-\textbf{QA set} & \textbf{Primary evidence} & \textbf{Question scope} & \textbf{Supervision target} \\
-\midrule
-Domain knowledge &
-Pose-specific text collected from online yoga sources &
-Identity, benefits, contraindications, precautions, procedures, alignment cues,
-modifications, breathing, mistakes, corrections, and sequencing &
-Pose-level semantic and instructional reasoning. \\
-Geometry grounded &
-Degree-valued measurements extracted for an individual image &
-Joint flexion, hip opening, shoulder elevation, trunk configuration, angular
-symmetry, regional summaries, and measured-condition verification &
-Image-specific measurement selection, comparison, interpretation, and numeric expression. \\
-\bottomrule
-\end{tabularx}
-\end{table*}
 
 \subsubsection{Domain-Knowledge QA Generation}
 \label{subsubsec:domain_qa_generation}
@@ -165,34 +134,11 @@ An LLM-based extractor first converts each chunk $c_i$ into two evidence represe
 where $p$ denotes the pose, $R_i$ is a set of compact relational facts, and $B_i$ is a set of structured knowledge units.
 Relational facts encode single subject--relation--object statements suited to concise factual questions.
 Knowledge units retain multi-step or explanatory content suited to procedural, alignment, safety, modification, breathing, sequencing, and correction questions.
+Table~\ref{tab:domain_knowledge_representation} in Appendix~\ref{app:annotation_sets} summarizes both representations.
 We instruct the extractor to restrict its output to statements supported by the current source chunk and to drop claims that a pose cures or treats a medical condition.
 Both restrictions are carried by the extraction prompt alone.
 No independent check enforces them, and we have not audited the retained records for unsupported medical claims.
 
-\begin{table*}[t]
-\centering
-\caption{Intermediate evidence representations for domain-knowledge QA generation.}
-\label{tab:domain_knowledge_representation}
-\small
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\textwidth}{L{0.21\textwidth} L{0.27\textwidth} L{0.28\textwidth} X}
-\toprule
-\textbf{Representation} & \textbf{Role} & \textbf{Typical content} & \textbf{Supported QA form} \\
-\midrule
-Relational facts &
-Single-fact, evidence-backed statements &
-Names, difficulty, benefits, contraindications, precautions, props, muscles,
-modifications, and related poses &
-Concise factual and reverse-lookup questions. \\
-Structured knowledge units &
-Multi-sentence or multi-step evidence &
-Procedures, alignment, safety, modifications, mistakes, corrections, breathing,
-sequencing, and teaching cues &
-Explanatory, procedural, scenario-based, and teacher-style questions. \\
-\bottomrule
-\end{tabularx}
-\end{table*}
 
 \noindent\textbf{Evidence-conditioned synthesis and deduplication.}
 The QA generator conditions jointly on the source chunk and its extracted representations:
