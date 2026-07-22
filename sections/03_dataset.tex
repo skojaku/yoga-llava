@@ -128,8 +128,8 @@ Table~\ref{tab:qa_annotation_overview} in Appendix~\ref{app:annotation_sets} con
 \label{subsubsec:domain_qa_generation}
 
 For each of the 82 categories, we collect pose-relevant text from online sources into one document per asana.
-We do not generate QA pairs directly from that text.
-An extractor $E_{\phi}$ first converts each document chunk $c_i$ into relational facts $R_i$ and structured knowledge units $B_i$, and a generator $G_{\psi}$ conditions on both:
+The collected text is noisy, and we do not generate QA pairs directly from it.
+An LLM extractor $E_{\phi}$ first converts each document chunk $c_i$ into relational facts $R_i$ and structured knowledge units $B_i$, and an LLM generator $G_{\psi}$ conditions on both:
 \begin{equation}
 \mathcal{Q}^{\mathrm{dom}}_i=G_{\psi}\bigl(c_i,E_{\phi}(c_i,p),p\bigr),
 \label{eq:domain_qa}
@@ -138,7 +138,7 @@ where $p$ denotes the pose.
 Each accepted item stores its supporting facts, knowledge units, and an evidence phrase, so every answer remains traceable to the source text.
 We instruct the extractor to keep only statements supported by the current chunk and to drop claims that a pose cures or treats a medical condition.
 Both restrictions are carried by the prompt alone.
-No independent check enforces them, and we have not audited the retained records for unsupported medical claims.
+No independent check enforces either one, and we have not audited the retained records for unsupported medical claims.
 Appendix~\ref{app:domain_generation} describes the collection, chunking, and deduplication procedure, and Table~\ref{tab:domain_qa_config} lists the values used.
 We fixed these values before generation and did not search over them.
 

@@ -11,13 +11,14 @@ In addition, 57.01\% and 70.63\% of predictions fall within $10^\circ$ and $15^\
 Table~\ref{tab:overall_results} in Appendix~\ref{app:additional_results} lists the full metric set.
 These results indicate that the model can identify and express the requested measurement from the supplied geometry under a known answer structure.
 
-Two reference points bound this result.
-A constant predictor at the test mean attains an $R^2$ of 0 by construction.
-The reported $R^2$ and RMSE imply a target standard deviation of $53.24^\circ$, which is that predictor's RMSE.
-YogaLLaVA V3 reduces RMSE by 59\% against this anchor.
-At the other end, 518 of the 521 targets are supplied among the geometry tokens (Sec.~\ref{sec:evaluation_protocol}).
-An oracle that selects the correct descriptor and copies its value therefore attains an MAE of $0^\circ$ and an $R^2$ of 1 on those slots.
-The distance from that upper bound measures how often the model selects the wrong descriptor or fails to reproduce a value it was given.
+Two reference points bound the teacher-forced result.
+The first is a constant predictor that returns the test-set mean at every slot.
+Such a predictor attains an $R^2$ of 0 by construction, and its RMSE equals the standard deviation of the targets.
+The reported $R^2$ of 0.832 and RMSE of $21.82^\circ$ place that standard deviation at $53.24^\circ$.
+YogaLLaVA V3 therefore reduces RMSE by 59\% relative to the constant predictor.
+The second is an oracle that reads the requested descriptor out of the geometry input and copies its value.
+Because 518 of the 521 targets are supplied among the geometry tokens (Sec.~\ref{sec:evaluation_protocol}), the oracle attains an MAE of $0^\circ$ and an $R^2$ of 1 on those slots.
+The distance from the oracle measures how often YogaLLaVA V3 selects the wrong descriptor or fails to reproduce a value already supplied to it.
 
 
 \subsection{Analysis by Question Type}
@@ -28,7 +29,7 @@ Misconception questions achieve the lowest MAE ($11.28^\circ$) and highest withi
 Regional-summary and comparison questions also perform favorably despite requiring multiple values or cross-body-part relations.
 Instructor-observation questions are the most challenging, with an MAE of $21.08^\circ$ and within-$10^\circ$ accuracy of 25.81\%.
 Their $R^2$ of 0.054 over 31 slots is the weakest result in the table and indicates that predictions in this family barely track their targets.
-The error metrics alone understate this failure.
+The MAE and threshold accuracies alone understate the weakness.
 Their less explicit teacher-style formulations may make descriptor selection more ambiguous, although the present experiment does not isolate this factor.
 
 \begin{table}[t]
@@ -63,7 +64,8 @@ The symmetry categories contain only three or four slots and should not be used 
 Hip symmetry is also distinct because no dedicated hip-symmetry token is included in the 14-descriptor input vocabulary.
 Its three test targets therefore cannot be retrieved from a corresponding independent input token.
 Despite the missing token, hip symmetry reaches an MAE of $7.82^\circ$, lower than several descriptors with dedicated input tokens and far larger test support.
-Under a retrieval-based reading of the regression, this direction is counterintuitive, and we note it as an open question given the three-slot sample.
+Under a retrieval-based reading of the regression, the direction of this result is counterintuitive.
+We leave the discrepancy as an open question given the three-slot sample.
 
 
 \subsection{Autoregressive Generation}
@@ -78,11 +80,11 @@ This comparison evaluates complete models.
 It does not isolate a single architectural factor.
 YogaLLaVA V3 receives the geometry input and task-specific instruction tuning, whereas the baselines are image-only and zero-shot.
 The observed advantage reflects the combined effect of geometry conditioning, domain adaptation, and continuous angle regression.
-It should not be read as a modality-matched ablation.
+The comparison should not be read as a modality-matched ablation.
 
 For numeric comparison, we use the 160-record common-success subset on which all three models produce the correct slot count.
 Conditioning on joint success removes every record where a baseline produced an invalid slot count.
-Because such records are plausibly the harder ones, the numeric gaps below hold conditional on this selection.
+Because such records are plausibly the harder ones, the numeric gaps below hold only over the records that all three models handled.
 YogaLLaVA V3 achieves a slot-level MAE of $17.65^\circ$, compared with $42.80^\circ$ for LLaVA and $46.91^\circ$ for Qwen.
 Its record-level macro MAE is $16.98^\circ$ with a 95\% bootstrap confidence interval of $[14.15,20.17]^\circ$.
 The corresponding intervals are $[37.33,46.41]^\circ$ for LLaVA and $[41.59,53.87]^\circ$ for Qwen.
