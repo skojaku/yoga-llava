@@ -1,7 +1,7 @@
 \section{Related Work}
 \label{sec:related}
 
-\noindent\textbf{Human pose estimation and body reconstruction.}
+\noindent\textbf{Pose estimation and body reconstruction.}
 Recovering the configuration of a human body from a single image is a mature problem.
 In two dimensions, pose estimators already localize keypoints with high accuracy.
 Early architectures reach this accuracy by fusing multi-scale features~\cite{newell2016stacked,xiao2018simple} and associating keypoints across people~\cite{cao2019openpose}.
@@ -19,7 +19,7 @@ Within yoga and related exercise domains, Pose Tutor goes further and identifies
 Such outputs say whether a pose is wrong without saying how the body is configured.
 Our focus is complementary to this line of work: the language supervision we construct keeps every numeric statement traceable to an explicit, image-specific measurement.
 
-\noindent\textbf{Vision--language learning and visual QA.}
+\noindent\textbf{Vision--language models and VQA.}
 Vision--language models learn statistical links between appearance and text at scale.
 CLIP establishes the recipe with contrastive pretraining over image--text pairs~\cite{radford2021clip}.
 Building on such representations, Flamingo and BLIP-2 couple frozen image encoders with language models~\cite{alayrac2022flamingo,li2023blip2}.
