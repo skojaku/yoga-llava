@@ -4,13 +4,13 @@
 We construct \textbf{YogaAlign}, a geometry-grounded vision--language
 benchmark that extends Yoga-82 with reconstructed 3D body structure,
 interpretable geometric measurements, and instruction-style question--answer
-(QA) annotations. The benchmark is designed to support reasoning beyond pose
+(QA) annotations. The benchmark supports reasoning beyond pose
 recognition, including joint-angle interpretation, bilateral comparison,
 regional alignment analysis, and pose-specific instructional knowledge. Its
-construction comprises three stages: (i) monocular 3D body reconstruction,
-(ii) extraction of structured geometric descriptors, and (iii) generation of
-two complementary QA streams grounded in either pose-level textual knowledge
-or image-specific geometry.
+construction comprises three stages. We reconstruct a 3D body from each image,
+extract structured geometric descriptors, and generate two complementary QA
+sets grounded in either pose-level textual knowledge or image-specific
+geometry.
 
 \subsection{Source Images and 3D Body Reconstruction}
 \label{subsec:source_reconstruction}
@@ -112,9 +112,9 @@ and shoulder elevation are computed relative to torso-level reference axes.
     \includegraphics[width=\textwidth]{fig_dataset.png}
     \caption{\textbf{YogaAlign dataset construction.}
     Pose-level domain knowledge and image-specific 3D geometry are processed
-    through complementary streams to generate domain and geometry-grounded
-    QA annotations.}
-    \label{fig:dataset_pipeline}
+    separately to produce the domain-knowledge and geometry-grounded QA
+    annotations.}
+    \label{fig:dataset_construction}
 \end{figure*}
 \noindent\textbf{Trunk, symmetry, and support descriptors.}
 Trunk measurements are derived from the pelvis--shoulder axis and the
@@ -138,23 +138,23 @@ diagnostic, or rehabilitation measurements.
 \subsection{Question--Answer Annotation}
 \label{subsec:qa_generation}
 
-YogaAlign contains two complementary QA streams. The \emph{domain-knowledge}
-stream captures pose-level semantic and instructional information that cannot
+YogaAlign contains two complementary QA sets. The \emph{domain-knowledge}
+set captures pose-level semantic and instructional information that cannot
 be inferred reliably from body geometry alone. The \emph{geometry-grounded}
-stream verbalizes image-specific angular evidence extracted from the reconstructed
+set verbalizes image-specific angular evidence extracted from the reconstructed
 body. Table~\ref{tab:qa_annotation_overview} contrasts their evidence sources
 and supervision targets.
 
 \begin{table*}[t]
 \centering
-\caption{Complementary QA annotation streams in YogaAlign.}
+\caption{Complementary QA annotation sets in YogaAlign.}
 \label{tab:qa_annotation_overview}
 \small
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.15}
 \begin{tabularx}{\textwidth}{L{0.19\textwidth} L{0.26\textwidth} L{0.30\textwidth} X}
 \toprule
-\textbf{QA stream} & \textbf{Primary evidence} & \textbf{Question scope} & \textbf{Supervision target} \\
+\textbf{QA set} & \textbf{Primary evidence} & \textbf{Question scope} & \textbf{Supervision target} \\
 \midrule
 Domain knowledge &
 Pose-specific text collected from online yoga sources &
@@ -179,9 +179,8 @@ pose-relevant online sources. The collected material is organized into one
 document per asana. We retain information relevant to pose understanding and
 instruction, including execution steps, alignment principles, modifications,
 breathing cues, common mistakes, corrections, benefits, contraindications, and
-precautions. Website boilerplate, navigation text, advertisements, author
-biographies, publication metadata, product promotions, and generic marketing
-language are excluded.
+precautions. We exclude navigation text, advertisements, author biographies,
+publication metadata, product promotions, and generic marketing language.
 
 \noindent\textbf{Evidence structuring.}
 Each pose document is divided into 5,000-character chunks with a 500-character
@@ -268,8 +267,8 @@ Context length & 32,768 tokens \\
 \subsubsection{Geometry-Grounded QA Generation}
 \label{subsubsec:geometry_qa_generation}
 
-The second stream is generated directly from the measurements associated with
-an individual image. We restrict this stream to degree-valued descriptors,
+The second set is generated directly from the measurements associated with
+an individual image. We restrict this set to degree-valued descriptors,
 which provide interpretable continuous targets. Non-angular normalized
 quantities, including stance width, body-center offset, and shoulder- and
 hip-height differences, remain part of the geometric annotation taxonomy but
@@ -284,7 +283,7 @@ f_m=(r_m,b_m,n_m,v_m,s_m),
 \end{equation}
 where $r_m$ and $b_m$ denote the body region and part, $n_m$ identifies the
 descriptor, $v_m$ is its angular value, and $s_m$ is its discretized
-interpretation state. We organize these facts into a lightweight graph
+interpretation state. We organize these facts into a graph
 $\mathcal{G}_I=(\mathcal{V}_I,\mathcal{E}_I)$ containing image, pose, region,
 body-part, metric, and interpretation nodes. Edges encode relations such as
 image--pose, region--body-part, body-part--metric, and metric--interpretation.
@@ -345,12 +344,12 @@ or biomechanical claims. The model therefore verbalizes a predefined evidence
 path rather than inferring unrestricted yoga knowledge.
 
 \noindent\textbf{Validation and numeric targets.}
-Each candidate QA pair is checked by a rule-based validator for pose-name
+We check each candidate QA pair against rule-based criteria for pose-name
 presence, required numeric values, anatomical laterality, prohibited internal
 terms, path-specific constraints, and near-duplicate questions. Failed samples
-are regenerated with validator feedback for at most two retries; if all retries
-fail, a deterministic evidence-based template is used. Each accepted record
-stores
+are regenerated at most twice, with the violated criteria supplied to the
+generator. If both regenerations fail, we use a deterministic evidence-based
+template. Each accepted record stores
 \begin{equation}
 \bigl(I,q_k,a_k,p_k,E(p_k),\mathcal{A}_k\bigr),
 \label{eq:geometry_record}
@@ -380,7 +379,7 @@ QA pairs per image & 2 \\
 LLM & Qwen3.6-35B-A3B \\
 Context length & 16,000 tokens \\
 Temperature & 0.15 \\
-Maximum retries & 2 \\
+Maximum regeneration attempts & 2 \\
 Primary supervision & Exact angles in degrees \\
 Diversity control & Rolling memory and family rotation \\
 Quality control & Rule validation and deterministic templates \\
@@ -393,10 +392,10 @@ Quality control & Rule validation and deterministic templates \\
 
 The final YogaAlign corpus contains 10,090 QA records: 4,090 pose-level
 domain-knowledge examples and 6,000 image-specific geometry-grounded examples.
-The geometry stream comprises 3,000 direct-angle, 905 comparison, 900 regional-
+The geometry set comprises 3,000 direct-angle, 905 comparison, 900 regional-
 summary, 600 misconception, and 595 instructor-observation records. Together,
-the two streams provide complementary supervision: the domain stream captures
-what is generally known about an asana, whereas the geometry stream describes
+the two sets provide complementary supervision. The domain set captures
+what is generally known about an asana, whereas the geometry set describes
 the measured configuration of a particular reconstructed body. This distinction
 is retained throughout training and evaluation so that pose-level knowledge is
 not conflated with image-specific geometric evidence.

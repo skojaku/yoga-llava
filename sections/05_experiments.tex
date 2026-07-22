@@ -46,7 +46,7 @@ projector maps the visual features to the 4,096-dimensional language space.
 The maximum sequence length is 1,280 tokens. Both the vision encoder and
 multimodal projector remain frozen; the language decoder is adapted using the
 LoRA settings described in Sec.~\ref{sec:training_objective}, together
-with the proposed geometry and angle modules.
+with the proposed geometry and angle components.
 
 We train for 12 epochs using AdamW with weight decay 0.01 and gradient clipping
 at 1.0. A per-device batch size of four and eight-step gradient accumulation
@@ -56,7 +56,7 @@ are $1.5\!\times\!10^{-4}$ for LoRA parameters,
 $2\!\times\!10^{-5}$ for the trainable input and output embeddings, and
 $1\!\times\!10^{-4}$ for the geometry encoder, angle-feedback encoder, angle
 embedding, and regression head. The pretrained backbone is loaded in bfloat16,
-whereas the added numeric modules are kept in float32. Training is
+whereas the added numeric components are kept in float32. Training is
 performed on one NVIDIA RTX A6000 GPU with fixed Python, NumPy, PyTorch, and
 CUDA seeds.
 
