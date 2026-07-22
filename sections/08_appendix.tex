@@ -18,7 +18,6 @@ Fig.~\ref{fig:sam3d_examples} shows the reconstructions that the geometric annot
 \label{app:annotation_sets}
 
 Table~\ref{tab:qa_annotation_overview} contrasts the evidence sources and supervision targets of the two QA sets.
-Table~\ref{tab:domain_knowledge_representation} describes the two intermediate representations that the domain-knowledge generator conditions on.
 
 \begin{table*}[t]
 \centering
@@ -44,6 +43,24 @@ Image-specific measurement selection, comparison, interpretation, and numeric ex
 \bottomrule
 \end{tabularx}
 \end{table*}
+
+
+\section{Domain-Knowledge Generation Procedure}
+\label{app:domain_generation}
+
+We use Crawl4AI to retrieve and extract text from pose-relevant online sources for each of the 82 categories.
+We retain information relevant to pose understanding and instruction, including execution steps, alignment principles, modifications, breathing cues, common mistakes, corrections, benefits, contraindications, and precautions.
+We exclude navigation text, advertisements, author biographies, publication metadata, product promotions, and generic marketing language.
+Each pose document is then divided into 5,000-character chunks with a 500-character overlap.
+
+The extractor produces two representations per chunk (Table~\ref{tab:domain_knowledge_representation}).
+Relational facts encode single subject--relation--object statements suited to concise factual questions.
+Knowledge units retain multi-step or explanatory content suited to procedural, alignment, safety, modification, breathing, sequencing, and correction questions.
+
+We instruct the generator to use only the supplied evidence.
+Compact signatures of previously extracted facts, knowledge units, and questions are maintained across chunks to suppress semantic repetition.
+Question families are varied across factual, procedural, scenario-based, safety, reverse-lookup, correction, and teacher-cue formulations.
+Each accepted item stores the pose, source-chunk identifier, question, answer, QA type, supporting facts, supporting knowledge units, and an evidence phrase.
 
 \begin{table*}[t]
 \centering

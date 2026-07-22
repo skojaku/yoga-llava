@@ -117,41 +117,19 @@ Table~\ref{tab:qa_annotation_overview} in Appendix~\ref{app:annotation_sets} con
 \subsubsection{Domain-Knowledge QA Generation}
 \label{subsubsec:domain_qa_generation}
 
-\noindent\textbf{Pose-specific knowledge acquisition.}
-For each of the 82 categories, we use Crawl4AI to retrieve and extract text from pose-relevant online sources.
-The collected material is organized into one document per asana.
-We retain information relevant to pose understanding and instruction, including execution steps, alignment principles, modifications, breathing cues, common mistakes, corrections, benefits, contraindications, and precautions.
-We exclude navigation text, advertisements, author biographies, publication metadata, product promotions, and generic marketing language.
-
-\noindent\textbf{Evidence structuring.}
-Each pose document is divided into 5,000-character chunks with a 500-character overlap.
-We do not generate QA pairs directly from the noisy source text.
-An LLM-based extractor first converts each chunk $c_i$ into two evidence representations:
+For each of the 82 categories, we collect pose-relevant text from online sources into one document per asana.
+We do not generate QA pairs directly from that text.
+An extractor $E_{\phi}$ first converts each document chunk $c_i$ into relational facts $R_i$ and structured knowledge units $B_i$, and a generator $G_{\psi}$ conditions on both:
 \begin{equation}
-(R_i,B_i)=E_{\phi}(c_i,p),
-\label{eq:domain_extraction}
-\end{equation}
-where $p$ denotes the pose, $R_i$ is a set of compact relational facts, and $B_i$ is a set of structured knowledge units.
-Relational facts encode single subject--relation--object statements suited to concise factual questions.
-Knowledge units retain multi-step or explanatory content suited to procedural, alignment, safety, modification, breathing, sequencing, and correction questions.
-Table~\ref{tab:domain_knowledge_representation} in Appendix~\ref{app:annotation_sets} summarizes both representations.
-We instruct the extractor to restrict its output to statements supported by the current source chunk and to drop claims that a pose cures or treats a medical condition.
-Both restrictions are carried by the extraction prompt alone.
-No independent check enforces them, and we have not audited the retained records for unsupported medical claims.
-
-
-\noindent\textbf{Evidence-conditioned synthesis and deduplication.}
-The QA generator conditions jointly on the source chunk and its extracted representations:
-\begin{equation}
-\mathcal{Q}^{\mathrm{dom}}_i=G_{\psi}(c_i,R_i,B_i,p).
+\mathcal{Q}^{\mathrm{dom}}_i=G_{\psi}\bigl(c_i,E_{\phi}(c_i,p),p\bigr),
 \label{eq:domain_qa}
 \end{equation}
-We instruct the generator to use only the supplied evidence.
-Compact signatures of previously extracted facts, knowledge units, and questions are maintained across chunks to suppress semantic repetition.
-Question families are varied across factual, procedural, scenario-based, safety, reverse-lookup, correction, and teacher-cue formulations.
-Each accepted item stores the pose, source-chunk identifier, question, answer, QA type, supporting facts, supporting knowledge units, and an evidence phrase.
-Every answer remains traceable to its source evidence.
-Table~\ref{tab:domain_qa_config} in Appendix~\ref{app:generation_settings} lists the chunking, extraction, and decoding values used here.
+where $p$ denotes the pose.
+Each accepted item stores its supporting facts, knowledge units, and an evidence phrase, so every answer remains traceable to the source text.
+We instruct the extractor to keep only statements supported by the current chunk and to drop claims that a pose cures or treats a medical condition.
+Both restrictions are carried by the prompt alone.
+No independent check enforces them, and we have not audited the retained records for unsupported medical claims.
+Appendix~\ref{app:domain_generation} describes the collection, chunking, and deduplication procedure, and Table~\ref{tab:domain_qa_config} lists the values used.
 We fixed these values before generation and did not search over them.
 
 \subsubsection{Geometry-Grounded QA Generation}
