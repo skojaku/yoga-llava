@@ -150,14 +150,15 @@ It does not include 3D body structure, geometric measurements, or language annot
 We recover a 3D body representation from each Yoga-82 image using the pretrained SAM 3D Body model~\cite{yang2026sam3dbody}.
 Given an image $I$, the model predicts an articulated body and surface mesh under the Momentum Human Rig (MHR) representation.
 We retain the predicted mesh vertices and anatomical keypoints required by the subsequent measurement stage.
-Fig.~\ref{fig:sam3d_examples} shows representative reconstructions.
+Fig.~\ref{fig:sam3d_examples} shows the reconstruction of one image from each category.
 
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.98\textwidth]{_ALL_CLASSES_GRID.png}
-    \caption{Representative SAM 3D Body reconstructions for images from
-    Yoga-82. The examples illustrate the diversity of articulated body
-    configurations from which YogaAlign's geometric annotations are derived.}
+    \caption{SAM 3D Body reconstruction of one image from each of the 82
+    Yoga-82 categories. The recovered bodies span standing, seated, supine,
+    inverted, twisting, and arm-balancing configurations. We extract geometric
+    descriptors across this full range.}
     \label{fig:sam3d_examples}
 \end{figure*}
 
