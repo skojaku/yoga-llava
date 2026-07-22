@@ -20,14 +20,17 @@ Such outputs say whether a pose is wrong without saying how the body is configur
 Our focus is complementary to this line of work: the language supervision we construct keeps every numeric statement traceable to an explicit, image-specific measurement.
 
 \noindent\textbf{Vision--language learning and visual QA.}
-Vision--language models connect images with text at scale.
+Vision--language models learn statistical links between appearance and text at scale.
 CLIP establishes the recipe with contrastive pretraining over image--text pairs~\cite{radford2021clip}.
 Building on such representations, Flamingo and BLIP-2 couple frozen image encoders with language models~\cite{alayrac2022flamingo,li2023blip2}.
 Visual instruction tuning then teaches the coupled models to follow instructions~\cite{liu2023visual,dai2023instructblip}, with Qwen2-VL adding dynamic-resolution processing~\cite{wang2024qwen2vl}.
+These links, however, connect appearance only to the words that describe it.
 The benchmarks behind this progress remain object-centric.
-VQAv2 and GQA ask about objects, attributes, and relational reasoning~\cite{goyal2017vqav2,hudson2019gqa}.
-Neither asks the model to select a continuous body measurement and verbalize it.
-YogaAlign supplies this missing supervision.
+VQAv2 and GQA ask about objects, attributes, and relations whose answers are visible in the image~\cite{goyal2017vqav2,hudson2019gqa}.
+A body posture, by contrast, is arbitrarily linked to its cultural or social meaning.
+This link cannot be recovered from appearance statistics alone because nearly identical body configurations can carry substantially different meanings.
+No existing benchmark grounds language in the measured configuration of the body.
+YogaAlign supplies this missing supervision by pairing images with explicit, measured body geometry.
 
 \noindent\textbf{Human pose datasets.}
 Existing pose datasets do not close this gap.
